@@ -1,4 +1,3 @@
-
 import React from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,10 +79,7 @@ const Analytics = () => {
     <AdminLayout>
       <div className="space-y-4 animate-fade-in">
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Analytics</h2>
-            <p className="text-muted-foreground">Track store performance and insights</p>
-          </div>
+          <h2 className="text-3xl font-bold tracking-tight">Analytics</h2>
           <Button>
             <Download className="mr-2 h-4 w-4" /> Export Report
           </Button>
@@ -170,7 +166,12 @@ const Analytics = () => {
                     <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip 
-                      formatter={(value, name) => [`$${value}`, name.charAt(0).toUpperCase() + name.slice(1)]}
+                      formatter={(value, name) => {
+                        if (typeof name === 'string') {
+                          return [`$${value}`, name.charAt(0).toUpperCase() + name.slice(1)];
+                        }
+                        return [`$${value}`, String(name)];
+                      }}
                       labelFormatter={(label) => `Month: ${label}`}
                     />
                     <Legend />

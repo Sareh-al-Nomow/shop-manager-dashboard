@@ -1,6 +1,5 @@
-
 import React from "react";
-import { Trending, TrendingDown, TrendingUp } from "lucide-react";
+import { TrendingDown, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface MetricCardProps {
@@ -18,11 +17,7 @@ export const MetricCard = ({ title, value, trend, trendValue, icon }: MetricCard
     neutral: "text-gray-500",
   };
 
-  const TrendIcon = {
-    up: TrendingUp,
-    down: TrendingDown,
-    neutral: Trending,
-  }[trend];
+  const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : TrendingUp;
 
   return (
     <Card>
@@ -63,7 +58,7 @@ export const DashboardMetrics = () => {
         value="1,245"
         trend="up"
         trendValue="+2.7%"
-        icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>}
+        icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 1 0 7.75"></path></svg>}
       />
       <MetricCard
         title="Avg. Order Value"
