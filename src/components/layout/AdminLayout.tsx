@@ -26,6 +26,11 @@ import {
   Bell,
   Menu,
   LogOut,
+  Category,
+  Tags,
+  Attribute,
+  Coupon,
+  Brand,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -55,6 +60,21 @@ const navItems = [
     path: "/products",
   },
   {
+    title: "Categories",
+    icon: Category,
+    path: "/categories",
+  },
+  {
+    title: "Brands",
+    icon: Brand,
+    path: "/brands",
+  },
+  {
+    title: "Attributes",
+    icon: Attribute,
+    path: "/attributes",
+  },
+  {
     title: "Orders",
     icon: ShoppingCart,
     path: "/orders",
@@ -63,6 +83,11 @@ const navItems = [
     title: "Customers",
     icon: Users,
     path: "/customers",
+  },
+  {
+    title: "Coupons",
+    icon: Coupon,
+    path: "/coupons",
   },
   {
     title: "Analytics",
