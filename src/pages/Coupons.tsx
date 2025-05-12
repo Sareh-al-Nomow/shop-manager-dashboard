@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Coupon } from "lucide-react";
+import { BadgePercent } from "lucide-react";
 
 const couponsData = [
   { id: 1, code: "SUMMER25", discount: "25%", type: "percentage", usageLimit: 100, usageCount: 42, expiryDate: "2025-08-31", status: "active" },
@@ -25,7 +25,7 @@ export default function Coupons() {
             <p className="text-muted-foreground">Manage your discount coupons</p>
           </div>
           <Button>
-            <Coupon className="mr-2 h-4 w-4" />
+            <BadgePercent className="mr-2 h-4 w-4" />
             Add Coupon
           </Button>
         </div>

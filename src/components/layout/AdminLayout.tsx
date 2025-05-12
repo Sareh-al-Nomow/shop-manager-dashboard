@@ -26,11 +26,11 @@ import {
   Bell,
   Menu,
   LogOut,
-  Category,
   Tags,
-  Attribute,
-  Coupon,
-  Brand,
+  TagsIcon,
+  Bookmark,
+  BadgePercent,
+  Award,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -61,17 +61,17 @@ const navItems = [
   },
   {
     title: "Categories",
-    icon: Category,
+    icon: Tags,
     path: "/categories",
   },
   {
     title: "Brands",
-    icon: Brand,
+    icon: Award,
     path: "/brands",
   },
   {
     title: "Attributes",
-    icon: Attribute,
+    icon: TagsIcon,
     path: "/attributes",
   },
   {
@@ -86,7 +86,7 @@ const navItems = [
   },
   {
     title: "Coupons",
-    icon: Coupon,
+    icon: BadgePercent,
     path: "/coupons",
   },
   {

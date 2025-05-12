@@ -4,7 +4,7 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Category, Tag } from "lucide-react";
+import { Tags } from "lucide-react";
 
 const categoriesData = [
   { id: 1, name: "Electronics", slug: "electronics", products: 42 },
@@ -24,7 +24,7 @@ export default function Categories() {
             <p className="text-muted-foreground">Manage your product categories</p>
           </div>
           <Button>
-            <Category className="mr-2 h-4 w-4" />
+            <Tags className="mr-2 h-4 w-4" />
             Add Category
           </Button>
         </div>

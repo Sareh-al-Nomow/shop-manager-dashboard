@@ -4,7 +4,7 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Attribute } from "lucide-react";
+import { TagsIcon } from "lucide-react";
 
 const attributesData = [
   { id: 1, name: "Color", values: ["Red", "Blue", "Green", "Black", "White"], products: 52 },
@@ -24,7 +24,7 @@ export default function Attributes() {
             <p className="text-muted-foreground">Manage your product attributes</p>
           </div>
           <Button>
-            <Attribute className="mr-2 h-4 w-4" />
+            <TagsIcon className="mr-2 h-4 w-4" />
             Add Attribute
           </Button>
         </div>

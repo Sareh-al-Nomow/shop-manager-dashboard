@@ -4,7 +4,7 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Brand } from "lucide-react";
+import { Award } from "lucide-react";
 
 const brandsData = [
   { id: 1, name: "Apple", logo: "apple.png", products: 28 },
@@ -24,7 +24,7 @@ export default function Brands() {
             <p className="text-muted-foreground">Manage your product brands</p>
           </div>
           <Button>
-            <Brand className="mr-2 h-4 w-4" />
+            <Award className="mr-2 h-4 w-4" />
             Add Brand
           </Button>
         </div>
