@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AtSign, KeyRound, LogIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -14,6 +15,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,39 +29,33 @@ const Login = () => {
       return;
     }
     
-    // Simulate authentication
     setIsLoading(true);
     
     try {
-      // In a real app, this would be an API call to your auth service
-      setTimeout(() => {
-        // Mock credentials for demo
-        if (email === "admin@example.com" && password === "password") {
-          // Store some auth state (in a real app, this would be a token)
-          localStorage.setItem("isAuthenticated", "true");
-          
-          toast({
-            title: "Success",
-            description: "You have successfully logged in",
-          });
-          
-          // Redirect to dashboard
-          navigate("/");
-        } else {
-          toast({
-            title: "Authentication Failed",
-            description: "Invalid email or password",
-            variant: "destructive",
-          });
-        }
-        setIsLoading(false);
-      }, 1000);
+      const success = await login(email, password);
+      
+      if (success) {
+        toast({
+          title: "Success",
+          description: "You have successfully logged in",
+        });
+        
+        // Redirect to dashboard
+        navigate("/");
+      } else {
+        toast({
+          title: "Authentication Failed",
+          description: "Invalid email or password",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
         description: "An error occurred during login",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
