@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import {
   Sidebar,
   SidebarContent,
@@ -76,6 +77,8 @@ const navItems = [
 ];
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
+  const { logout } = useAuth();
+  
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -121,7 +124,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <DropdownMenuItem>Profile</DropdownMenuItem>
                     <DropdownMenuItem>Settings</DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600">
+                    <DropdownMenuItem onClick={logout} className="text-red-600">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log out</span>
                     </DropdownMenuItem>
@@ -138,6 +141,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 }
 
 function AdminSidebar() {
+  const { logout } = useAuth();
+  
   return (
     <Sidebar>
       <SidebarHeader className="h-14 border-b border-sidebar-border px-4 flex items-center">
@@ -172,6 +177,9 @@ function AdminSidebar() {
             <p className="truncate text-sm">admin@example.com</p>
             <p className="truncate text-xs text-muted-foreground">Administrator</p>
           </div>
+          <Button variant="ghost" size="icon" onClick={logout}>
+            <LogOut className="h-4 w-4 text-muted-foreground" />
+          </Button>
         </div>
       </SidebarFooter>
     </Sidebar>
