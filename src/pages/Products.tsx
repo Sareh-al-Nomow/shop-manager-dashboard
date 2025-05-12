@@ -1,4 +1,3 @@
-
 import React from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Eye } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const productsData = [
   {
@@ -105,8 +105,10 @@ const Products = () => {
               Manage your product inventory and details
             </p>
           </div>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" /> Add Product
+          <Button asChild>
+            <Link to="/create-product">
+              <Plus className="mr-2 h-4 w-4" /> Add Product
+            </Link>
           </Button>
         </div>
 

@@ -8,6 +8,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Products from "./pages/Products";
+import CreateProduct from "./pages/CreateProduct";
 import Categories from "./pages/Categories";
 import Brands from "./pages/Brands";
 import Attributes from "./pages/Attributes";
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
+            <Route path="/create-product" element={<ProtectedRoute><CreateProduct /></ProtectedRoute>} />
             <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
             <Route path="/brands" element={<ProtectedRoute><Brands /></ProtectedRoute>} />
             <Route path="/attributes" element={<ProtectedRoute><Attributes /></ProtectedRoute>} />
