@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,11 +15,19 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login } = useAuth();
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    // Only redirect if authentication check is complete and user is authenticated
+    if (!authLoading && isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate, authLoading]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast({
         title: "Error",
@@ -28,26 +36,35 @@ const Login = () => {
       });
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
-      const success = await login(email, password);
-      
-      if (success) {
+      const result = await login(email, password);
+
+      if (result.success) {
         toast({
           title: "Success",
           description: "You have successfully logged in",
         });
-        
+
         // Redirect to dashboard
         navigate("/");
       } else {
-        toast({
-          title: "Authentication Failed",
-          description: "Invalid email or password",
-          variant: "destructive",
-        });
+        // Check if this is a blocked account
+        if (result.errorType === "account_blocked") {
+          toast({
+            title: "Account Blocked",
+            description: "Your account has been disabled. Please contact an administrator.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Authentication Failed",
+            description: "Invalid email or password",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       toast({
@@ -67,7 +84,7 @@ const Login = () => {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">ShopAdmin</h1>
           <p className="text-muted-foreground mt-2">Sign in to your account</p>
         </div>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Welcome back</CardTitle>
@@ -130,7 +147,7 @@ const Login = () => {
             </CardFooter>
           </form>
         </Card>
-        
+
         <div className="text-center text-sm text-muted-foreground">
           <p>
             Don't have an account?{" "}

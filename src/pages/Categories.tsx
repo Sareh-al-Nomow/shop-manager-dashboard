@@ -1,5 +1,29 @@
 
 import React from "react";
+
+interface Category {
+  id: number;
+  uuid: string;
+  status: boolean;
+  parent_id: number;
+  include_in_nav: boolean;
+  position: number;
+  show_products: boolean;
+  created_at: string;
+  updated_at: string;
+  description: {
+    category_description_id: number;
+    category_description_category_id: number;
+    name: string;
+    short_description: string;
+    description: string;
+    image: string;
+    meta_title: string;
+    meta_keywords: string;
+    meta_description: string;
+    url_key: string;
+  };
+}
 import { Link } from "react-router-dom";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -7,15 +31,31 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tags } from "lucide-react";
 
-const categoriesData = [
-  { id: 1, name: "Electronics", slug: "electronics", products: 42 },
-  { id: 2, name: "Clothing", slug: "clothing", products: 36 },
-  { id: 3, name: "Home & Kitchen", slug: "home-kitchen", products: 28 },
-  { id: 4, name: "Beauty", slug: "beauty", products: 15 },
-  { id: 5, name: "Sports", slug: "sports", products: 20 },
-];
 
 export default function Categories() {
+  const [categoriesData, setCategoriesData] = React.useState<Category[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+  
+  React.useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("http://localhost:3250/api/categories");
+        if (!response.ok) {
+          throw new Error("Failed to fetch categories");
+        }
+        const { data } = await response.json();
+        setCategoriesData(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   return (
     <AdminLayout>
       <div className="space-y-4">
@@ -52,18 +92,32 @@ export default function Categories() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {categoriesData.map((category) => (
-                <TableRow key={category.id}>
-                  <TableCell>{category.id}</TableCell>
-                  <TableCell className="font-medium">{category.name}</TableCell>
-                  <TableCell>{category.slug}</TableCell>
-                  <TableCell className="text-right">{category.products}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">Edit</Button>
-                    <Button variant="ghost" size="sm" className="text-red-500">Delete</Button>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    Loading categories...
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-red-600">
+                    {error}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                categoriesData.map((category) => (
+                  <TableRow key={category.id}>
+                    <TableCell>{category.id}</TableCell>
+                    <TableCell className="font-medium">{category.description.name}</TableCell>
+                    <TableCell>{category.description.url_key}</TableCell>
+                    <TableCell className="text-right">{category.show_products ? 'Yes' : 'No'}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm">Edit</Button>
+                      <Button variant="ghost" size="sm" className="text-red-500">Delete</Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
@@ -71,3 +125,4 @@ export default function Categories() {
     </AdminLayout>
   );
 }
+
