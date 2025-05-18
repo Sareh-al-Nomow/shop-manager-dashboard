@@ -30,6 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import OrderDetailsDialog from "@/components/orders/OrderDetailsDialog";
+import CustomerDetailsDialog from "@/components/customers/CustomerDetailsDialog";
 
 const ordersData = [
   {
@@ -198,7 +200,13 @@ const Orders = () => {
             <TableBody>
               {ordersData.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.id}</TableCell>
+                  <TableCell className="font-medium">
+                    <OrderDetailsDialog orderId={order.id}>
+                      <Button variant="link" className="p-0 h-auto font-medium text-blue-600 hover:text-blue-800">
+                        {order.id}
+                      </Button>
+                    </OrderDetailsDialog>
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-8 w-8">
@@ -211,7 +219,11 @@ const Orders = () => {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{order.customer.name}</div>
+                        <CustomerDetailsDialog customerId={order.id}>
+                          <Button variant="link" className="p-0 h-auto font-medium text-foreground hover:text-blue-600">
+                            {order.customer.name}
+                          </Button>
+                        </CustomerDetailsDialog>
                         <div className="text-xs text-muted-foreground">{order.customer.email}</div>
                       </div>
                     </div>
@@ -235,8 +247,12 @@ const Orders = () => {
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" />
-                          <span>View Details</span>
+                          <OrderDetailsDialog orderId={order.id}>
+                            <div className="flex items-center w-full">
+                              <Eye className="mr-2 h-4 w-4" />
+                              <span>View Details</span>
+                            </div>
+                          </OrderDetailsDialog>
                         </DropdownMenuItem>
                         <DropdownMenuItem>
                           <Printer className="mr-2 h-4 w-4" />

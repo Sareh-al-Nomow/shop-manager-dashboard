@@ -17,6 +17,7 @@ import CreateAttribute from "./pages/CreateAttribute";
 import Orders from "./pages/Orders";
 import Customers from "./pages/Customers";
 import Coupons from "./pages/Coupons";
+import CreateCoupon from "./pages/CreateCoupon";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
             <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
             <Route path="/coupons" element={<ProtectedRoute><Coupons /></ProtectedRoute>} />
+            <Route path="/create-coupon" element={<ProtectedRoute><CreateCoupon /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />

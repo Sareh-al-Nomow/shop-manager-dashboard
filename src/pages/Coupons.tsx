@@ -1,5 +1,6 @@
 
-import React from "react";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,10 +25,12 @@ export default function Coupons() {
             <h1 className="text-2xl font-bold tracking-tight">Coupons</h1>
             <p className="text-muted-foreground">Manage your discount coupons</p>
           </div>
-          <Button>
-            <BadgePercent className="mr-2 h-4 w-4" />
-            Add Coupon
-          </Button>
+          <Link to="/create-coupon">
+            <Button>
+              <BadgePercent className="mr-2 h-4 w-4" />
+              Add Coupon
+            </Button>
+          </Link>
         </div>
 
         <div className="flex items-center gap-2">
