@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => ({
     port: 3255,
      host: true,
      origin: "https://store.sareh-nomow.xyz",
+     allowedHosts: true
   },
   plugins: [
     react(),
