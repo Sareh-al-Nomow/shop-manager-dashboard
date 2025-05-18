@@ -1,5 +1,6 @@
 
 import React from "react";
+import { Link } from "react-router-dom";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,10 +24,12 @@ export default function Categories() {
             <h1 className="text-2xl font-bold tracking-tight">Categories</h1>
             <p className="text-muted-foreground">Manage your product categories</p>
           </div>
-          <Button>
-            <Tags className="mr-2 h-4 w-4" />
-            Add Category
-          </Button>
+          <Link to="/create-category">
+            <Button>
+              <Tags className="mr-2 h-4 w-4" />
+              Add Category
+            </Button>
+          </Link>
         </div>
 
         <div className="flex items-center gap-2">

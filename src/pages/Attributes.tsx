@@ -1,5 +1,6 @@
 
 import React from "react";
+import { Link } from "react-router-dom";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,10 +24,12 @@ export default function Attributes() {
             <h1 className="text-2xl font-bold tracking-tight">Attributes</h1>
             <p className="text-muted-foreground">Manage your product attributes</p>
           </div>
-          <Button>
-            <TagsIcon className="mr-2 h-4 w-4" />
-            Add Attribute
-          </Button>
+          <Link to="/create-attribute">
+            <Button>
+              <TagsIcon className="mr-2 h-4 w-4" />
+              Add Attribute
+            </Button>
+          </Link>
         </div>
 
         <div className="flex items-center gap-2">

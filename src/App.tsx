@@ -10,8 +10,10 @@ import Index from "./pages/Index";
 import Products from "./pages/Products";
 import CreateProduct from "./pages/CreateProduct";
 import Categories from "./pages/Categories";
+import CreateCategory from "./pages/CreateCategory";
 import Brands from "./pages/Brands";
 import Attributes from "./pages/Attributes";
+import CreateAttribute from "./pages/CreateAttribute";
 import Orders from "./pages/Orders";
 import Customers from "./pages/Customers";
 import Coupons from "./pages/Coupons";
@@ -35,8 +37,10 @@ const App = () => (
             <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
             <Route path="/create-product" element={<ProtectedRoute><CreateProduct /></ProtectedRoute>} />
             <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
+            <Route path="/create-category" element={<ProtectedRoute><CreateCategory /></ProtectedRoute>} />
             <Route path="/brands" element={<ProtectedRoute><Brands /></ProtectedRoute>} />
             <Route path="/attributes" element={<ProtectedRoute><Attributes /></ProtectedRoute>} />
+            <Route path="/create-attribute" element={<ProtectedRoute><CreateAttribute /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
             <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
             <Route path="/coupons" element={<ProtectedRoute><Coupons /></ProtectedRoute>} />
