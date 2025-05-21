@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import AdminLayout from "@/components/layout/AdminLayout";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -137,6 +139,7 @@ interface PaginationMeta {
 }
 
 const Products = () => {
+  const { token } = useAuth();
   const [productsData, setProductsData] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -204,11 +207,13 @@ const Products = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch("http://localhost:3250/api/categories");
-        if (!response.ok) {
-          throw new Error("Failed to fetch categories");
-        }
-        const { data } = await response.json();
+        const response = await axios.get("http://localhost:3250/api/categories", {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        // With axios, the data is already parsed and available in response.data
+        const { data } = response.data;
         setCategories(data.map((cat: any) => ({ 
           id: cat.id, 
           name: cat.description.name 
@@ -262,12 +267,14 @@ const Products = () => {
         if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
         if (filters.sortOrder) queryParams.append('sortOrder', filters.sortOrder);
 
-        const response = await fetch(`http://localhost:3250/api/products?${queryParams.toString()}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch products");
-        }
+        const response = await axios.get(`http://localhost:3250/api/products?${queryParams.toString()}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
 
-        const result = await response.json();
+        // With axios, the data is already parsed and available in response.data
+        const result = response.data;
         setProductsData(result.data || []);
 
         // Update pagination metadata if available
