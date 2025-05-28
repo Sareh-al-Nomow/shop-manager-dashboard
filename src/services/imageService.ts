@@ -1,0 +1,48 @@
+import api from './api';
+
+/**
+ * Image service for handling image upload API calls
+ */
+const imageService = {
+  /**
+   * Upload an image for categories
+   * @param imageFile The image file to upload
+   * @returns Promise with the uploaded image data including the image path
+   */
+  uploadCategoryImage: async (imageFile: File) => {
+    // Create FormData for the image upload
+    const formData = new FormData();
+    formData.append('image', imageFile);
+
+    // Use multipart/form-data for file uploads
+    const response = await api.post('/categories/upload-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data;
+  },
+
+  /**
+   * Upload a logo for brands
+   * @param logoFile The logo file to upload
+   * @returns Promise with the uploaded logo data including the logo path
+   */
+  uploadBrandLogo: async (logoFile: File) => {
+    // Create FormData for the logo upload
+    const formData = new FormData();
+    formData.append('logo', logoFile);
+
+    // Use multipart/form-data for file uploads
+    const response = await api.post('/brands/upload-logo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data;
+  },
+};
+
+export default imageService;
