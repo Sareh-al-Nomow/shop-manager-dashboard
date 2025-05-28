@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { useAuth } from "@/context/AuthContext";
+import { categoryService, productService } from "@/services";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -207,13 +207,8 @@ const Products = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get("http://localhost:3250/api/categories", {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-        // With axios, the data is already parsed and available in response.data
-        const { data } = response.data;
+        const result = await categoryService.getCategories();
+        const { data } = result;
         setCategories(data.map((cat: any) => ({ 
           id: cat.id, 
           name: cat.description.name 
@@ -253,28 +248,19 @@ const Products = () => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        // Build query string from filters
-        const queryParams = new URLSearchParams();
-        queryParams.append('page', filters.page.toString());
-        queryParams.append('limit', filters.limit.toString());
+        // Convert filters to ProductParams format
+        const params = {
+          page: filters.page,
+          limit: filters.limit,
+          search: filters.name || undefined,
+          categoryId: filters.categoryId !== 'all' ? parseInt(filters.categoryId) : undefined,
+          brandId: filters.brandId !== 'all' ? parseInt(filters.brandId) : undefined,
+          sortBy: filters.sortBy,
+          sortOrder: filters.sortOrder as 'asc' | 'desc',
+          // Add other filters as needed
+        };
 
-        if (filters.sku) queryParams.append('sku', filters.sku);
-        if (filters.name) queryParams.append('name', filters.name);
-        if (filters.categoryId && filters.categoryId !== 'all') queryParams.append('categoryId', filters.categoryId);
-        if (filters.brandId && filters.brandId !== 'all') queryParams.append('brandId', filters.brandId);
-        if (filters.visibility && filters.visibility !== 'all') queryParams.append('visibility', filters.visibility);
-        if (filters.status && filters.status !== 'all') queryParams.append('status', filters.status);
-        if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
-        if (filters.sortOrder) queryParams.append('sortOrder', filters.sortOrder);
-
-        const response = await axios.get(`http://localhost:3250/api/products?${queryParams.toString()}`, {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-
-        // With axios, the data is already parsed and available in response.data
-        const result = response.data;
+        const result = await productService.getProducts(params);
         setProductsData(result.data || []);
 
         // Update pagination metadata if available
@@ -672,7 +658,7 @@ const Products = () => {
         {/* Pagination controls */}
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {productsData.length > 0 ? (paginationMeta.currentPage - 1) * paginationMeta.itemsPerPage + 1 : 0} to {Math.min(paginationMeta.currentPage * paginationMeta.itemsPerPage, paginationMeta.totalItems)} of {paginationMeta.totalItems} products
+            Showing {productsData.length > 0 ? (filters.page - 1) * paginationMeta.itemsPerPage + 1 : 0} to {Math.min(filters.page * paginationMeta.itemsPerPage, paginationMeta.totalItems)} of {paginationMeta.totalItems} products
           </div>
 
           <div className="flex items-center space-x-2">

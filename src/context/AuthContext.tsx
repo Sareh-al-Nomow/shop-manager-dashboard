@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { authService } from "../services";
 
 interface User {
   id: number;
@@ -47,17 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string): Promise<{ success: boolean; errorType?: string }> => {
     try {
-      const response = await axios.post("http://localhost:3250/api/auth/login", 
-        { email, password },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          }
-        }
-      );
-
-      // With axios, the data is already parsed and available in response.data
-      const data = response.data;
+      const data = await authService.login({ email, password });
       const userData = data.user;
 
       // Block users with role_id = 4 from logging in
@@ -79,12 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: true };
     } catch (error) {
       console.error("Login error:", error);
-      // Check if it's an axios error with a response
-      if (axios.isAxiosError(error) && error.response) {
-        // You can handle specific status codes if needed
-        // e.g., if (error.response.status === 401) { ... }
-        console.error("API error response:", error.response.data);
-      }
+      // Error is handled by the API interceptor for common cases
       return { success: false };
     }
   };

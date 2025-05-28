@@ -11,7 +11,12 @@ import Products from "./pages/Products";
 import CreateProduct from "./pages/CreateProduct";
 import Categories from "./pages/Categories";
 import CreateCategory from "./pages/CreateCategory";
+import EditCategory from "./pages/EditCategory";
+import CategoryDetails from "./pages/CategoryDetails";
 import Brands from "./pages/Brands";
+import BrandDetails from "./pages/BrandDetails";
+import CreateBrand from "./pages/CreateBrand";
+import EditBrand from "./pages/EditBrand";
 import Attributes from "./pages/Attributes";
 import CreateAttribute from "./pages/CreateAttribute";
 import Orders from "./pages/Orders";
@@ -39,7 +44,12 @@ const App = () => (
             <Route path="/create-product" element={<ProtectedRoute><CreateProduct /></ProtectedRoute>} />
             <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
             <Route path="/create-category" element={<ProtectedRoute><CreateCategory /></ProtectedRoute>} />
+            <Route path="/edit-category/:id" element={<ProtectedRoute><EditCategory /></ProtectedRoute>} />
+            <Route path="/category/:id" element={<ProtectedRoute><CategoryDetails /></ProtectedRoute>} />
             <Route path="/brands" element={<ProtectedRoute><Brands /></ProtectedRoute>} />
+            <Route path="/create-brand" element={<ProtectedRoute><CreateBrand /></ProtectedRoute>} />
+            <Route path="/edit-brand/:id" element={<ProtectedRoute><EditBrand /></ProtectedRoute>} />
+            <Route path="/brand/:id" element={<ProtectedRoute><BrandDetails /></ProtectedRoute>} />
             <Route path="/attributes" element={<ProtectedRoute><Attributes /></ProtectedRoute>} />
             <Route path="/create-attribute" element={<ProtectedRoute><CreateAttribute /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />

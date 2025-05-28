@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import AdminLayout from "@/components/layout/AdminLayout";
+import {categoryService, imageService} from "@/services";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,7 @@ export default function CreateCategory() {
     include_in_nav: true,
     show_products: true,
     parent_id: null,
-    position: '',
+    position: '1',
     description: {
       name: '',
       short_description: '',
@@ -55,14 +55,8 @@ export default function CreateCategory() {
     const fetchParentCategories = async () => {
       setLoadingCategories(true);
       try {
-        const response = await axios.get("http://localhost:3250/api/categories", {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-
-        // With axios, the data is already parsed and available in response.data
-        const { data } = response.data;
+        const result = await categoryService.getCategories();
+        const { data } = result;
 
         // Extract categories with their names
         const categories = data.map((cat:any) => ({
@@ -135,25 +129,130 @@ export default function CreateCategory() {
     });
   };
 
-  // Handle file input change
+  /**
+   * Helper function to validate basic image properties (type and size)
+   * 
+   * Validation requirements:
+   * 1. File type must be one of: JPEG, JPG, PNG, GIF
+   * 2. File size must not exceed 2MB
+   * 
+   * @param file - The image file to validate
+   * @returns boolean - True if the image passes all validations, false otherwise
+   */
+  const validateImageBasics = (file: File): boolean => {
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload a valid image file (JPEG, JPG, PNG, GIF)",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    // Validate file size (max 2MB)
+    const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+    if (file.size > maxSize) {
+      toast({
+        title: "File Too Large",
+        description: "Image size should not exceed 2MB",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  /**
+   * Handle file input change with comprehensive image validation
+   * 
+   * Validation process:
+   * 1. Basic validation (type and size) using validateImageBasics helper
+   * 2. Dimension validation:
+   *    - Minimum dimensions: 200x200 pixels
+   *    - Maximum dimensions: 2000x2000 pixels
+   * 3. Image loading validation to ensure the file is a valid image
+   * 
+   * If all validations pass, the image is set in state and a preview is created
+   */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setImageFile(file);
 
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+      // Step 1: Validate basic properties (type and size)
+      if (!validateImageBasics(file)) {
+        return;
+      }
+
+      // Step 2: Validate image dimensions
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+
+        // Check minimum dimensions (at least 200x200 pixels)
+        if (img.width < 200 || img.height < 200) {
+          toast({
+            title: "Image Too Small",
+            description: "Image dimensions should be at least 200x200 pixels",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Check maximum dimensions (at most 2000x2000 pixels)
+        if (img.width > 2000 || img.height > 2000) {
+          toast({
+            title: "Image Too Large",
+            description: "Image dimensions should not exceed 2000x2000 pixels",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // If all validations pass, set the image file and preview
+        setImageFile(file);
+
+        // Create preview for display in the UI
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
       };
-      reader.readAsDataURL(file);
+
+      // Step 3: Handle image loading errors
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        toast({
+          title: "Invalid Image",
+          description: "The selected file is not a valid image",
+          variant: "destructive"
+        });
+      };
+
+      img.src = objectUrl;
     }
   };
 
-  // Handle form submission
+  /**
+   * Handle form submission with comprehensive validation
+   * 
+   * Validation process:
+   * 1. Required text fields validation (name, descriptions, URL key)
+   * 2. Image validation:
+   *    - Check if an image is selected
+   *    - Validate image properties using validateImageBasics helper
+   * 
+   * If all validations pass, the form is submitted to create a new category
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Step 1: Validate all required text fields
     if (!formData.description.name) {
       toast({
         title: "Validation Error",
@@ -163,67 +262,130 @@ export default function CreateCategory() {
       return;
     }
 
+    if (!formData.description.short_description) {
+      toast({
+        title: "Validation Error",
+        description: "Short description is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.description.description) {
+      toast({
+        title: "Validation Error",
+        description: "Description is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.description.url_key) {
+      toast({
+        title: "Validation Error",
+        description: "URL key is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Step 2: Validate image
+    // Check if an image is selected
+    if (!imageFile) {
+      toast({
+        title: "Validation Error",
+        description: "Category image is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate image properties (type and size)
+    if (!validateImageBasics(imageFile)) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Create FormData object
-      const apiFormData = new FormData();
+      // Create JSON object for API
+      const apiData: any = {
+        status: formData.status,
+        include_in_nav: formData.include_in_nav,
+        show_products: formData.show_products,
+        description: { ...formData.description },
 
-      // Add image if selected
-      if (imageFile) {
-        apiFormData.append('image', imageFile);
-      }
-
-      // Add all form fields directly to FormData
-      apiFormData.append('status', String(formData.status));
-      apiFormData.append('include_in_nav', String(formData.include_in_nav));
-      apiFormData.append('show_products', String(formData.show_products));
+      };
 
       // Handle parent_id (convert 'none' to null or convert to number)
       if (formData.parent_id === 'none') {
-        apiFormData.append('parent_id', '');
+        apiData.parent_id = '';
       } else if (formData.parent_id) {
-        apiFormData.append('parent_id', String(formData.parent_id));
+        apiData.parent_id = formData.parent_id;
       }
 
       // Add position if it exists
       if (formData.position) {
-        apiFormData.append('position', formData.position);
+        apiData.position = parseInt(formData.position) ;
       }
 
-      // Add all description fields
-      Object.entries(formData.description).forEach(([key, value]) => {
-        apiFormData.append(`description[${key}]`, String(value));
-      });
+      // Step 3: Upload the image and get the image path
+      // This is a separate API call that happens before creating the category
+      let imagePath = '';
+      if (imageFile) {
+        try {
+          // Upload the image using the dedicated image upload endpoint
+          const imageUploadResult = await imageService.uploadCategoryImage(imageFile);
+          console.log('Image upload result:', imageUploadResult);
 
-      // Send POST request using axios
-      const response = await axios.post('http://localhost:3250/api/categories', apiFormData, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "multipart/form-data" // Axios sets this automatically for FormData
+          // Get the image path from the response
+          if (imageUploadResult.imagePath) {
+            imagePath = imageUploadResult.image_path;
+            // Add the image path to the API data for category creation
+            apiData.description.image = imagePath;
+          } else {
+            throw new Error('Image upload failed: No image path returned');
+          }
+        } catch (imageError) {
+          console.error('Error uploading image:', imageError);
+          toast({
+            title: "Error",
+            description: imageError instanceof Error ? imageError.message : "Failed to upload image",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
         }
-      });
+      }
 
-      // Axios automatically throws errors for non-2xx responses
-      // and parses JSON responses, so we can access data directly
-      const result = response.data;
+      // Step 4: Log the data being sent for debugging
+      console.log('Sending the following data:', apiData);
 
+      // Step 5: Send POST request to create the category
+      // This uses the categoryService to handle the API call
+      const result = await categoryService.createCategory(apiData);
+
+      // Step 6: Show success message to the user
       toast({
         title: "Success",
         description: "Category created successfully"
       });
 
-      // Redirect to categories page
+      // Step 7: Redirect to categories page after successful creation
       navigate('/categories');
 
     } catch (error) {
+      // Handle any errors that occur during the category creation process
       console.error('Error creating category:', error);
+
+      // Show error message to the user with specific error details if available
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to create category",
         variant: "destructive"
       });
     } finally {
+      // Always reset the submitting state, regardless of success or failure
       setIsSubmitting(false);
     }
   };
@@ -267,6 +429,7 @@ export default function CreateCategory() {
                         value={formData.description.short_description}
                         onChange={handleInputChange}
                         placeholder="Enter a brief description"
+                        required
                       />
                     </div>
 
@@ -309,6 +472,7 @@ export default function CreateCategory() {
                         className="mt-1"
                         value={formData.description.description}
                         onChange={handleInputChange}
+                        required
                       />
                     </div>
                   </div>
@@ -324,6 +488,7 @@ export default function CreateCategory() {
                       className="mt-1"
                       value={formData.description.url_key}
                       onChange={handleInputChange}
+                      required
                     />
                   </div>
 
@@ -385,6 +550,7 @@ export default function CreateCategory() {
                     className="hidden"
                     accept="image/*"
                     onChange={handleFileChange}
+                    required
                   />
                   <Button 
                     type="button"

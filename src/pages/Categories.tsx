@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
+import { categoryService } from "@/services";
+import { useToast } from "@/hooks/use-toast";
 
 interface Category {
   id: number;
@@ -32,7 +33,7 @@ interface FilterParams {
   page: number;
   limit: number;
   name: string;
-  status: string;
+  status: boolean | 'all';
   parentId: string;
   sortBy: string;
   sortOrder: 'asc' | 'desc';
@@ -85,15 +86,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 export default function Categories() {
   const { token } = useAuth();
+  const { toast } = useToast();
   const [categoriesData, setCategoriesData] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [parentCategories, setParentCategories] = useState<{ id: number; name: string }[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
     currentPage: 1,
     totalPages: 1,
@@ -113,7 +128,7 @@ export default function Categories() {
   });
 
   // Function to update filters
-  const updateFilter = (key: keyof FilterParams, value: string | number) => {
+  const updateFilter = (key: keyof FilterParams, value: string | number | boolean | 'all') => {
     setFilters(prev => ({
       ...prev,
       [key]: value,
@@ -135,6 +150,59 @@ export default function Categories() {
     });
   };
 
+  // Function to handle category deletion
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+
+    setDeleteLoading(true);
+    try {
+      await categoryService.deleteCategory(categoryToDelete.id);
+
+      // Show success message
+      toast({
+        title: "Category deleted",
+        description: `${categoryToDelete.description.name} has been successfully deleted.`,
+        variant: "default",
+      });
+
+      // Refresh the category list
+      const params = {
+        page: filters.page,
+        limit: filters.limit,
+        search: filters.name || undefined,
+        parentId: filters.parentId === 'null' ? null : 
+                 filters.parentId !== 'all' ? parseInt(filters.parentId) : undefined,
+        status: filters.status !== 'all' ? filters.status : undefined,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder
+      };
+
+      const result = await categoryService.getCategories(params);
+      setCategoriesData(result.data || []);
+
+      // Update pagination metadata if available
+      if (result.meta) {
+        setPaginationMeta({
+          currentPage: result.meta.currentPage || 1,
+          totalPages: result.meta.totalPages || 1,
+          totalItems: result.meta.totalItems || 0,
+          itemsPerPage: result.meta.itemsPerPage || 10
+        });
+      }
+    } catch (err) {
+      // Show error message
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to delete category",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteLoading(false);
+      setDeleteDialogOpen(false);
+      setCategoryToDelete(null);
+    }
+  };
+
   // Function to toggle sort order
   const toggleSort = (field: string) => {
     setFilters(prev => ({
@@ -149,13 +217,8 @@ export default function Categories() {
   useEffect(() => {
     const fetchParentCategories = async () => {
       try {
-        const response = await axios.get("http://localhost:3250/api/categories?parentId=0", {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-        // With axios, the data is already parsed and available in response.data
-        const { data } = response.data;
+        const result = await categoryService.getRootCategories();
+        const { data } = result;
         setParentCategories(data.map((cat: Category) => ({ 
           id: cat.id, 
           name: cat.description.name 
@@ -173,25 +236,19 @@ export default function Categories() {
     const fetchCategories = async () => {
       setLoading(true);
       try {
-        // Build query string from filters
-        const queryParams = new URLSearchParams();
-        queryParams.append('page', filters.page.toString());
-        queryParams.append('limit', filters.limit.toString());
+        // Convert filters to CategoryParams format
+        const params = {
+          page: filters.page,
+          limit: filters.limit,
+          search: filters.name || undefined,
+          parentId: filters.parentId === 'null' ? null : 
+                   filters.parentId !== 'all' ? parseInt(filters.parentId) : undefined,
+          status: filters.status !== 'all' ? filters.status : undefined,
+          sortBy: filters.sortBy,
+          sortOrder: filters.sortOrder
+        };
 
-        if (filters.name) queryParams.append('name', filters.name);
-        if (filters.status && filters.status !== 'all') queryParams.append('status', filters.status);
-        if (filters.parentId && filters.parentId !== 'all') queryParams.append('parentId', filters.parentId);
-        if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
-        if (filters.sortOrder) queryParams.append('sortOrder', filters.sortOrder);
-
-        const response = await axios.get(`http://localhost:3250/api/categories?${queryParams.toString()}`, {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-
-        // With axios, the data is already parsed and available in response.data
-        const result = response.data;
+        const result = await categoryService.getCategories(params);
         setCategoriesData(result.data || []);
 
         // Update pagination metadata if available
@@ -201,6 +258,14 @@ export default function Categories() {
             totalPages: result.meta.totalPages || 1,
             totalItems: result.meta.totalItems || 0,
             itemsPerPage: result.meta.itemsPerPage || 10
+          });
+        } else {
+          // Set default pagination metadata if not available in the response
+          setPaginationMeta({
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: result.data?.length || 0,
+            itemsPerPage: filters.limit
           });
         }
       } catch (err) {
@@ -261,7 +326,7 @@ export default function Categories() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
-                      <SelectItem value="0">Root Categories</SelectItem>
+                      <SelectItem value="null">Root Categories</SelectItem>
                       {parentCategories.map((category) => (
                         <SelectItem key={category.id} value={category.id.toString()}>
                           {category.name}
@@ -274,8 +339,8 @@ export default function Categories() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Status</label>
                   <Select 
-                    value={filters.status} 
-                    onValueChange={(value) => updateFilter('status', value)}
+                    value={filters.status === true ? 'true' : filters.status === false ? 'false' : 'all'} 
+                    onValueChange={(value) => updateFilter('status', value === 'true' ? true : value === 'false' ? false : 'all')}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="All" />
@@ -336,7 +401,7 @@ export default function Categories() {
 
             {filters.parentId && filters.parentId !== 'all' && (
               <Badge variant="outline" className="flex items-center gap-1">
-                Parent: {filters.parentId === '0' ? 'Root Categories' : 
+                Parent: {filters.parentId === 'null' ? 'Root Categories' : 
                   parentCategories.find(c => c.id.toString() === filters.parentId)?.name || filters.parentId}
                 <X 
                   className="h-3 w-3 cursor-pointer" 
@@ -345,9 +410,9 @@ export default function Categories() {
               </Badge>
             )}
 
-            {filters.status && filters.status !== 'all' && (
+            {filters.status !== 'all' && (
               <Badge variant="outline" className="flex items-center gap-1">
-                Status: {filters.status === 'true' ? 'Active' : 'Inactive'}
+                Status: {filters.status === true ? 'Active' : 'Inactive'}
                 <X 
                   className="h-3 w-3 cursor-pointer" 
                   onClick={() => updateFilter('status', 'all')}
@@ -355,7 +420,7 @@ export default function Categories() {
               </Badge>
             )}
 
-            {(filters.name || (filters.parentId && filters.parentId !== 'all') || (filters.status && filters.status !== 'all')) && (
+            {(filters.name || (filters.parentId && filters.parentId !== 'all') || filters.status !== 'all') && (
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -440,7 +505,7 @@ export default function Categories() {
                     <TableCell className="font-medium">{category.description.name}</TableCell>
                     <TableCell>{category.description.url_key}</TableCell>
                     <TableCell>
-                      {category.parent_id === 0 ? (
+                      {category.parent_id === 0 || category.parent_id === null ? (
                         <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
                           Root
                         </Badge>
@@ -468,16 +533,26 @@ export default function Categories() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem>
-                            <Eye className="mr-2 h-4 w-4" />
-                            <span>View</span>
+                          <DropdownMenuItem asChild>
+                            <Link to={`/category/${category.id}`}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              <span>View</span>
+                            </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" />
-                            <span>Edit</span>
+                          <DropdownMenuItem asChild>
+                            <Link to={`/edit-category/${category.id}`}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              <span>Edit</span>
+                            </Link>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem 
+                            className="text-red-600"
+                            onClick={() => {
+                              setCategoryToDelete(category);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
                             <Trash2 className="mr-2 h-4 w-4" />
                             <span>Delete</span>
                           </DropdownMenuItem>
@@ -494,7 +569,7 @@ export default function Categories() {
         {/* Pagination controls */}
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {categoriesData.length > 0 ? (paginationMeta.currentPage - 1) * paginationMeta.itemsPerPage + 1 : 0} to {Math.min(paginationMeta.currentPage * paginationMeta.itemsPerPage, paginationMeta.totalItems)} of {paginationMeta.totalItems} categories
+            Showing {categoriesData.length > 0 ? (filters.page - 1) * paginationMeta.itemsPerPage + 1 : 0} to {Math.min(filters.page * paginationMeta.itemsPerPage, paginationMeta.totalItems)} of {paginationMeta.totalItems} categories
           </div>
 
           <div className="flex items-center space-x-2">
@@ -552,6 +627,29 @@ export default function Categories() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the category
+              {categoryToDelete && <strong> "{categoryToDelete.description.name}"</strong>} and remove it from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCategory}
+              disabled={deleteLoading}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {deleteLoading ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }
