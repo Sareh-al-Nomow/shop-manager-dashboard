@@ -181,11 +181,11 @@ export default function CreateBrand() {
           // Upload the logo using the dedicated logo upload endpoint
           const logoUploadResult = await imageService.uploadBrandLogo(logoFile);
 
-          // Get the logo path from the response
-          if (logoUploadResult.logo_path) {
-            brandData.logo_url = logoUploadResult.logo_path;
+          // Get the image path from the response
+          if (logoUploadResult.imagePath) {
+            brandData.image = logoUploadResult.imagePath;
           } else {
-            throw new Error('Logo upload failed: No logo path returned');
+            throw new Error('Logo upload failed: No image path returned');
           }
         } catch (imageError) {
           console.error('Error uploading logo:', imageError);

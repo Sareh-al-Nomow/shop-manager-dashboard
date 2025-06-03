@@ -2,13 +2,26 @@ import api from './api';
 
 export interface Category {
   id: number;
-  name: string;
-  description?: string;
   parent_id: number | null;
   image_url?: string;
   created_at: string;
   updated_at: string;
+  status?: boolean;
+  include_in_nav?: boolean;
+  show_products?: boolean;
+  position?: number;
+  description?: {
+    name?: string;
+    short_description?: string;
+    description?: string;
+    meta_title?: string;
+    image?:string;
+    meta_keywords?: string;
+    meta_description?: string;
+    url_key?: string;
+  };
 }
+
 
 export interface CategoryUpdateData {
   status?: boolean;

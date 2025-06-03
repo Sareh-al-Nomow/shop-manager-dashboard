@@ -4,6 +4,14 @@ import categoryService from './categoryService';
 import productService from './productService';
 import imageService from './imageService';
 import brandService from './brandService';
+import attributeService from './attributeService';
+import taxClassService from './taxClassService';
+import couponService from './couponService';
+import groupService from './groupService';
+import languageService from './languageService';
+import categoryTranslationService from './categoryTranslationService';
+import userService from './userService';
+import roleService from './roleService';
 
 
 export {
@@ -13,7 +21,15 @@ export {
   categoryService,
   productService,
   imageService,
-  brandService
+  brandService,
+  attributeService,
+  taxClassService,
+  couponService,
+  groupService,
+  languageService,
+  categoryTranslationService,
+  userService,
+  roleService
 };
 
 // Default export for convenience
@@ -23,5 +39,13 @@ export default {
   categories: categoryService,
   products: productService,
   images: imageService,
-  brands: brandService
+  brands: brandService,
+  attributes: attributeService,
+  taxClasses: taxClassService,
+  coupons: couponService,
+  groups: groupService,
+  languages: languageService,
+  categoryTranslations: categoryTranslationService,
+  users: userService,
+  roles: roleService
 };

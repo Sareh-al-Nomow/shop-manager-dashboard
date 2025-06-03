@@ -21,21 +21,22 @@ const imageService = {
       },
     });
 
+    console.log(response.data);
     return response.data;
   },
 
   /**
    * Upload a logo for brands
    * @param logoFile The logo file to upload
-   * @returns Promise with the uploaded logo data including the logo path
+   * @returns Promise with the uploaded logo data including the image path
    */
   uploadBrandLogo: async (logoFile: File) => {
     // Create FormData for the logo upload
     const formData = new FormData();
-    formData.append('logo', logoFile);
+    formData.append('image', logoFile);
 
     // Use multipart/form-data for file uploads
-    const response = await api.post('/brands/upload-logo', formData, {
+    const response = await api.post('/brands/upload-image', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

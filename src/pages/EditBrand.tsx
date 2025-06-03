@@ -73,8 +73,8 @@ export default function EditBrand() {
         setOriginalFormData(JSON.parse(JSON.stringify(newFormData)));
 
         // Set logo preview if available
-        if (brand?.logo_url) {
-          setLogoPreview(brand.logo_url);
+        if (brand?.image) {
+          setLogoPreview(brand.image);
         }
       } catch (error) {
         console.error("Error fetching brand:", error);
@@ -245,12 +245,12 @@ export default function EditBrand() {
           // Upload the logo first
           const logoUploadResult = await imageService.uploadBrandLogo(logoFile);
 
-          // Get the logo path from the response
-          if (logoUploadResult && logoUploadResult.logo_path) {
-            // Add the logo path to the API data
-            brandData.logo_url = logoUploadResult.logo_path;
+          // Get the image path from the response
+          if (logoUploadResult && logoUploadResult.imagePath) {
+            // Add the image path to the API data
+            brandData.image = logoUploadResult.imagePath;
           } else {
-            throw new Error('Logo upload failed: No logo path returned');
+            throw new Error('Logo upload failed: No image path returned');
           }
         } catch (imageError) {
           console.error('Error uploading logo:', imageError);
