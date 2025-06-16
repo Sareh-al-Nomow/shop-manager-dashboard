@@ -123,7 +123,7 @@ export default function CollectionDetails() {
       // Filter out products that are already in the collection
       const existingProductIds = collection?.products?.map(p => p.product_id) || [];
       const filteredProducts = result.data.filter((product: Product) => 
-        !existingProductIds.includes(product.id)
+        !existingProductIds.includes(product.product_id)
       );
 
       setAvailableProducts(filteredProducts);
@@ -465,7 +465,7 @@ export default function CollectionDetails() {
                                     htmlFor={`product-${product.product_id}`}
                                     className="sr-only"
                                   >
-                                    Select product {product.name}
+                                    Select product {product.description.name}
                                   </Label>
                                 </div>
                               </TableCell>

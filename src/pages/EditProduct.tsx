@@ -329,11 +329,8 @@ const EditProduct = () => {
 
   // Function to validate images before form submission
   const validateImages = (): boolean => {
-    if (productImages.length < 2) {
-      setImageErrors("At least 2 images are required");
-      return false;
-    }
-
+    // For product updates, we don't require any images, but if images are provided,
+    // we validate that the number is within the allowed range (0-5)
     if (productImages.length > 5) {
       setImageErrors("Maximum of 5 images allowed");
       return false;
@@ -347,65 +344,89 @@ const EditProduct = () => {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
-    // Required fields validation
-    if (!formData.name.trim()) errors.name = "Name is required";
-    if (!formData.sku.trim()) errors.sku = "SKU is required";
-    if (!formData.price.trim()) errors.price = "Price is required";
-    if (!formData.urlKey.trim()) errors.urlKey = "URL key is required";
+    // For edit mode, we don't require any fields, but we validate the format of provided fields
 
-    // Numeric fields validation
-    if (formData.price && isNaN(parseFloat(formData.price))) {
+    // Numeric fields validation - only validate if a value is provided
+    if (formData.price && formData.price.trim() && isNaN(parseFloat(formData.price))) {
       errors.price = "Price must be a valid number";
     }
 
-    if (formData.old_price && isNaN(parseFloat(formData.old_price))) {
+    if (formData.old_price && formData.old_price.trim() && isNaN(parseFloat(formData.old_price))) {
       errors.old_price = "Old price must be a valid number";
     }
 
-    if (formData.weight && isNaN(parseFloat(formData.weight))) {
+    if (formData.weight && formData.weight.trim() && isNaN(parseFloat(formData.weight))) {
       errors.weight = "Weight must be a valid number";
     }
 
-    if (formData.quantity && isNaN(parseInt(formData.quantity))) {
+    if (formData.quantity && formData.quantity.trim() && isNaN(parseInt(formData.quantity))) {
       errors.quantity = "Quantity must be a valid number";
     }
 
     // Set validation errors
     setFormErrors(errors);
 
-    // Check if images are valid
-    const imagesValid = validateImages();
+    // Check if images are valid only if there are images
+    const imagesValid = productImages.length > 0 ? validateImages() : true;
 
     // Return true if no errors and images are valid
     return Object.keys(errors).length === 0 && imagesValid;
   };
 
-  // Format data for API submission
+  // Format data for API submission - only include fields that have been changed
   const formatProductData = () => {
-    return {
-      sku: formData.sku,
-      price: parseFloat(formData.price),
-      old_price: formData.old_price ? parseFloat(formData.old_price) : undefined,
-      weight: formData.weight ? parseFloat(formData.weight) : undefined,
-      status: formData.status,
-      visibility: formData.visibility,
-      category_id: formData.categoryId !== "none" ? parseInt(formData.categoryId) : undefined,
-      brand_id: formData.brandId !== "none" ? parseInt(formData.brandId) : undefined,
-      tax_class: formData.taxClassId !== "none" ? parseInt(formData.taxClassId) : undefined,
-      description: {
-        name: formData.name,
-        description: formData.description,
-        url_key: formData.urlKey,
-        meta_title: formData.metaTitle || undefined,
-        meta_description: formData.metaDescription || undefined,
-        meta_keywords: formData.metaKeywords || undefined
-      },
-      inventory: {
-        qty: parseInt(formData.quantity || "0"),
-        manage_stock: formData.manageStock,
-        stock_availability: formData.stockAvailability
-      }
+    // Start with an empty object
+    const productData: any = {};
+
+    // Only add fields that have values (not empty strings or undefined)
+    if (formData.sku.trim()) productData.sku = formData.sku;
+    if (formData.price.trim()) productData.price = parseFloat(formData.price);
+    if (formData.old_price && formData.old_price.trim()) productData.old_price = parseFloat(formData.old_price);
+    if (formData.weight && formData.weight.trim()) productData.weight = parseFloat(formData.weight);
+
+    // Boolean values are always defined, so include them if they're in the form
+    productData.status = formData.status;
+    productData.visibility = formData.visibility;
+
+    // Only add IDs if they're not "none"
+    if (formData.categoryId && formData.categoryId !== "none") productData.category_id = parseInt(formData.categoryId);
+    if (formData.brandId && formData.brandId !== "none") productData.brand_id = parseInt(formData.brandId);
+    if (formData.taxClassId && formData.taxClassId !== "none") productData.tax_class = parseInt(formData.taxClassId);
+
+    // Only add description fields that have values
+    const descriptionFields = {
+      name: formData.name.trim(),
+      description: formData.description.trim(),
+      url_key: formData.urlKey.trim(),
+      meta_title: formData.metaTitle.trim(),
+      meta_description: formData.metaDescription.trim(),
+      meta_keywords: formData.metaKeywords.trim()
     };
+
+    // Filter out empty description fields
+    const filteredDescriptionFields = Object.fromEntries(
+      Object.entries(descriptionFields).filter(([_, value]) => value !== '')
+    );
+
+    // Only add description object if there are any description fields
+    if (Object.keys(filteredDescriptionFields).length > 0) {
+      productData.description = filteredDescriptionFields;
+    }
+
+    // Only add inventory fields if they're defined
+    const inventoryFields: any = {};
+    if (formData.quantity) inventoryFields.qty = parseInt(formData.quantity);
+
+    // Boolean values are always defined, so include them if they're in the form
+    inventoryFields.manage_stock = formData.manageStock;
+    inventoryFields.stock_availability = formData.stockAvailability;
+
+    // Only add inventory object if there are any inventory fields
+    if (Object.keys(inventoryFields).length > 0) {
+      productData.inventory = inventoryFields;
+    }
+
+    return productData;
   };
 
   // Format image data for API submission
@@ -462,10 +483,10 @@ const EditProduct = () => {
       const productResponse = await productService.updateProduct(productId, productData);
 
       // Step 2: Save product images
-      if (productImages.length > 0) {
-        const imageData = formatImageData(productId);
-        await productService.saveProductImages(imageData);
-      }
+      // if (productImages.length > 0) {
+      //   const imageData = formatImageData(productId);
+      //   await productService.saveProductImages(imageData);
+      // }
 
       // Step 3: Save product attributes
       if (Object.keys(selectedAttributeValues).length > 0) {

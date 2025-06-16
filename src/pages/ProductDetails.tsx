@@ -15,8 +15,20 @@ import {
   Bookmark,
   MessageSquare,
   Check,
-  X
+  X,
+  Calendar,
+  User,
+  ThumbsUp,
+  ThumbsDown
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Card,
   CardContent,
@@ -48,6 +60,10 @@ export default function ProductDetails() {
   const [reviewsPage, setReviewsPage] = useState(1);
   const [reviewsLimit] = useState(5);
   const [reviewsTotalPages, setReviewsTotalPages] = useState(1);
+
+  // Review details modal state
+  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   // Collections state
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -217,6 +233,12 @@ export default function ProductDetails() {
         variant: "destructive"
       });
     }
+  };
+
+  // Handle opening review details modal
+  const handleOpenReviewModal = (review: Review) => {
+    setSelectedReview(review);
+    setIsReviewModalOpen(true);
   };
 
   if (loading) {
@@ -482,7 +504,11 @@ export default function ProductDetails() {
                 ) : (
                   <div className="space-y-6 w-full">
                     {reviews.map((review) => (
-                      <div key={review.review_id} className="border rounded-lg p-4 space-y-3 w-full">
+                      <div 
+                        key={review.review_id} 
+                        className="border rounded-lg p-4 space-y-3 w-full hover:bg-gray-50 cursor-pointer transition-colors"
+                        onClick={() => handleOpenReviewModal(review)}
+                      >
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-2">
                             <Avatar className="h-8 w-8">
@@ -497,7 +523,11 @@ export default function ProductDetails() {
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <Link to={`/user/${review.customer.id}`} className="font-medium hover:underline">
+                              <Link 
+                                to={`/user/${review.customer.id}`} 
+                                className="font-medium hover:underline"
+                                onClick={(e) => e.stopPropagation()} // Prevent modal from opening when clicking the link
+                              >
                                 {review.customer.full_name}
                               </Link>
                               <div className="text-xs text-muted-foreground">
@@ -516,13 +546,13 @@ export default function ProductDetails() {
                         <div className="w-full">
                           {renderStarRating(review.rating)}
                           {review.title && <h4 className="font-medium mt-2">{review.title}</h4>}
-                          <p className="mt-1 break-words whitespace-normal overflow-hidden w-full">{review.review_text}</p>
+                          <p className="mt-1 break-words whitespace-normal overflow-hidden w-full line-clamp-2">{review.review_text}</p>
                         </div>
 
                         {review.admin_response && (
                           <div className="bg-muted p-3 rounded-md mt-2 w-full">
                             <p className="text-sm font-medium">Admin Response:</p>
-                            <p className="text-sm w-full break-words">{review.admin_response}</p>
+                            <p className="text-sm w-full break-words line-clamp-2">{review.admin_response}</p>
                           </div>
                         )}
 
@@ -532,7 +562,10 @@ export default function ProductDetails() {
                               variant="outline" 
                               size="sm" 
                               className="text-green-600 hover:bg-green-50"
-                              onClick={() => handleApproveReview(review.review_id)}
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent modal from opening
+                                handleApproveReview(review.review_id);
+                              }}
                             >
                               <Check className="mr-1 h-4 w-4" />
                               Approve
@@ -541,7 +574,10 @@ export default function ProductDetails() {
                               variant="outline" 
                               size="sm" 
                               className="text-red-600 hover:bg-red-50"
-                              onClick={() => handleRejectReview(review.review_id)}
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent modal from opening
+                                handleRejectReview(review.review_id);
+                              }}
                             >
                               <X className="mr-1 h-4 w-4" />
                               Reject
@@ -654,6 +690,150 @@ export default function ProductDetails() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Review Details Modal */}
+        <Dialog open={isReviewModalOpen} onOpenChange={setIsReviewModalOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            {selectedReview && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-xl flex items-center gap-2">
+                    <span>Review Details</span>
+                    <Badge 
+                      variant="outline" 
+                      className={statusColors[selectedReview.status] || "bg-gray-100 text-gray-800"}
+                    >
+                      {selectedReview.status.charAt(0).toUpperCase() + selectedReview.status.slice(1)}
+                    </Badge>
+                  </DialogTitle>
+                  <DialogDescription>
+                    Review for {selectedReview.product.description.name}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-6">
+                  {/* Customer Information */}
+                  <div className="flex items-start gap-4 border-b pb-4">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={selectedReview.customer.avatar || ""} alt={selectedReview.customer.full_name} />
+                      <AvatarFallback className="text-lg">
+                        {selectedReview.customer.full_name
+                          ? selectedReview.customer.full_name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                          : "NA"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-lg">
+                          <Link to={`/user/${selectedReview.customer.id}`} className="hover:underline">
+                            {selectedReview.customer.full_name}
+                          </Link>
+                        </h3>
+                        {selectedReview.is_verified_purchase && (
+                          <Badge variant="secondary" className="bg-green-100 text-green-800">Verified Purchase</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>{formatDate(selectedReview.created_at)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <User className="h-4 w-4" />
+                          <span>Customer ID: {selectedReview.customer_id}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Review Content */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {renderStarRating(selectedReview.rating)}
+                      </div>
+                      <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <ThumbsUp className="h-4 w-4 text-green-600" />
+                          <span>{selectedReview.helpful_votes}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <ThumbsDown className="h-4 w-4 text-red-600" />
+                          <span>{selectedReview.not_helpful_votes}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {selectedReview.title && (
+                      <h3 className="text-lg font-medium">{selectedReview.title}</h3>
+                    )}
+
+                    <div className="bg-gray-50 p-4 rounded-md">
+                      <p className="whitespace-pre-line">{selectedReview.review_text}</p>
+                    </div>
+                  </div>
+
+                  {/* Admin Response */}
+                  {selectedReview.admin_response && (
+                    <div className="space-y-2 border-t pt-4">
+                      <h4 className="font-medium">Admin Response:</h4>
+                      <div className="bg-blue-50 p-4 rounded-md">
+                        <p className="whitespace-pre-line">{selectedReview.admin_response}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Admin Actions */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-2">Admin Actions:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedReview.status === "pending" && (
+                        <>
+                          <Button 
+                            variant="outline" 
+                            className="text-green-600 border-green-200 hover:bg-green-50"
+                            onClick={() => {
+                              handleApproveReview(selectedReview.review_id);
+                              setIsReviewModalOpen(false);
+                            }}
+                          >
+                            <Check className="mr-2 h-4 w-4" />
+                            Approve Review
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            className="text-red-600 border-red-200 hover:bg-red-50"
+                            onClick={() => {
+                              handleRejectReview(selectedReview.review_id);
+                              setIsReviewModalOpen(false);
+                            }}
+                          >
+                            <X className="mr-2 h-4 w-4" />
+                            Reject Review
+                          </Button>
+                        </>
+                      )}
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          // Here you would implement the functionality to add/edit admin response
+                          // For now, we'll just close the modal
+                          setIsReviewModalOpen(false);
+                        }}
+                      >
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        {selectedReview.admin_response ? "Edit Response" : "Add Response"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );

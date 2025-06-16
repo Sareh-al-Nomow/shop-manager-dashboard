@@ -137,11 +137,11 @@ export default function BrandDetails() {
                     </div>
 
                     <div className="space-y-4">
-                      {brand.logo_url && (
+                      {brand.image && (
                         <div>
                           <h3 className="font-medium text-sm text-muted-foreground mb-2">Brand Logo</h3>
                           <img 
-                            src={brand.logo_url} 
+                            src={brand.image}
                             alt={brand.name}
                             className="rounded-md max-h-48 object-contain border"
                           />
@@ -187,18 +187,18 @@ export default function BrandDetails() {
                         </TableHeader>
                         <TableBody>
                           {brand.products.map((product) => (
-                            <TableRow key={product.id}>
-                              <TableCell>{product.id}</TableCell>
+                            <TableRow key={product.product_id}>
+                              <TableCell>{product.product_id}</TableCell>
                               <TableCell className="font-medium">
                                 <div className="flex items-center gap-2">
-                                  {product.image_url && (
+                                  {product.images[0].origin_image && (
                                     <img 
-                                      src={product.image_url} 
-                                      alt={product.name}
+                                      src={product.images[0].origin_image}
+                                      alt={product.description.name}
                                       className="w-8 h-8 rounded-md object-cover"
                                     />
                                   )}
-                                  {product.name}
+                                  {product.description.name}
                                 </div>
                               </TableCell>
                               <TableCell>${product.price.toFixed(2)}</TableCell>

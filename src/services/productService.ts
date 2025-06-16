@@ -144,8 +144,8 @@ export interface ProductCreateData {
   variant_group_id?: number;
   visibility?: boolean;
   group_id?: number;
-  sku: string;
-  price: number;
+  sku?: string;
+  price?: number;
   old_price?: number;
   weight?: number;
   tax_class?: number;
@@ -153,18 +153,18 @@ export interface ProductCreateData {
   category_id?: number;
   brand_id?: number;
   description?: {
-    name: string;
+    name?: string;
     description?: string;
     short_description?: string;
-    url_key: string;
+    url_key?: string;
     meta_title?: string;
     meta_description?: string;
     meta_keywords?: string;
   };
   inventory?: {
-    qty: number;
-    manage_stock: boolean;
-    stock_availability: boolean;
+    qty?: number;
+    manage_stock?: boolean;
+    stock_availability?: boolean;
   };
 }
 
@@ -312,7 +312,7 @@ const productService = {
    * @returns Promise with updated product data
    */
   updateProduct: async (id: number, productData: ProductCreateData) => {
-    const response = await api.put(`/products/${id}`, { id, ...productData });
+    const response = await api.put(`/products/${id}`, { ...productData });
     return response.data;
   },
 };

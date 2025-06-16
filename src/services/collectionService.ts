@@ -208,7 +208,7 @@ const collectionService = {
    * @returns Promise with the result
    */
   removeProductsFromCollection: async (collectionId: number, productIds: number[]) => {
-    const response = await api.delete(`/collections/${collectionId}/products/batch`, {
+    const response = await api.delete(`/collections/delete/${collectionId}/products/batch`, {
       data: {
         product_ids: productIds
       }
