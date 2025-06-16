@@ -582,8 +582,8 @@ const Products = () => {
                         <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
                           <img
                             src={
-                              product.images.find((img) => img.is_main)?.single_image ||
-                              product.images[0]?.single_image
+                              product.images.find((img) => img.is_main)?.origin_image ||
+                              product.images[0]?.origin_image
                             }
                             alt={product.description.name}
                             className="h-8 w-8 object-cover"
