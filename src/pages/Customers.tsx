@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, Filter, MoreVertical, UserPlus, Edit, Trash2, Mail, Loader2 } from "lucide-react";
+import { Search, Filter, MoreVertical, UserPlus, Edit, Trash2, Mail, Loader2, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { userService, roleService } from "@/services";
@@ -259,14 +260,16 @@ const Customers = () => {
                             <Avatar className="h-8 w-8">
                               <AvatarImage src={user.avatar || ""} alt={user.full_name} />
                               <AvatarFallback>
-                                {user.full_name
+                                {user.full_name?user.full_name
                                   .split(" ")
                                   .map((n) => n[0])
-                                  .join("")}
+                                  .join("") : "No Name"}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <div className="font-medium">{user.full_name}</div>
+                              <Link to={`/user/${user.id}`} className="font-medium hover:underline">
+                                {user.full_name||"No Name"}
+                              </Link>
                               <div className="text-xs text-muted-foreground">ID: {user.id}</div>
                             </div>
                           </div>
@@ -298,6 +301,12 @@ const Customers = () => {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
+                              <DropdownMenuItem asChild>
+                                <Link to={`/user/${user.id}`}>
+                                  <User className="mr-2 h-4 w-4" />
+                                  <span>View Details</span>
+                                </Link>
+                              </DropdownMenuItem>
                               <DropdownMenuItem>
                                 <Edit className="mr-2 h-4 w-4" />
                                 <span>Edit</span>

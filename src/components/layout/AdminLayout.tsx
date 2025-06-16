@@ -31,6 +31,7 @@ import {
   Bookmark,
   BadgePercent,
   Award,
+  Star,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -92,10 +93,22 @@ const navItems = [
     requiredRole: "customer_manager",
   },
   {
+    title: "Reviews",
+    icon: Star,
+    path: "/reviews",
+    requiredRole: "customer_manager",
+  },
+  {
     title: "Coupons",
     icon: BadgePercent,
     path: "/coupons",
     requiredRole: "marketing_manager",
+  },
+  {
+    title: "Collections",
+    icon: Bookmark,
+    path: "/collections",
+    requiredRole: "product_manager",
   },
   {
     title: "Analytics",

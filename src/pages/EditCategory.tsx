@@ -29,6 +29,7 @@ interface Language {
 }
 
 interface Translation {
+  id?: number;
   lang_code: string;
   name: string;
   description?: string;
@@ -224,6 +225,7 @@ export default function EditCategory() {
           if (translationsResult && translationsResult.data) {
             // Map API response to our Translation interface
             const categoryTranslations = translationsResult.data.map((translation: any) => ({
+              id: translation.id,
               lang_code: translation.lang_code,
               name: translation.name || '',
               description: translation.description || '',
@@ -344,6 +346,7 @@ export default function EditCategory() {
           if (result) {
             // Map API response to our Translation interface
             const translation = {
+              id: result.id,
               lang_code: result.lang_code,
               name: result.name || '',
               description: result.description || '',
@@ -594,12 +597,28 @@ export default function EditCategory() {
       if (translations.length > 0) {
         try {
           // Save each translation
-          const translationPromises = translations.map(translation => 
-            categoryTranslationService.createTranslation({
-              ...translation,
-              category_id: categoryId
-            })
-          );
+          const translationPromises = translations.map(translation => {
+            // If translation has an ID, update it, otherwise create a new one
+            if (translation.id) {
+              return categoryTranslationService.updateTranslation(
+                translation.id,
+                {
+                  name: translation.name,
+                  description: translation.description,
+                  short_description: translation.short_description,
+                  url_key: translation.url_key,
+                  meta_title: translation.meta_title,
+                  meta_description: translation.meta_description,
+                  meta_keywords: translation.meta_keywords
+                }
+              );
+            } else {
+              return categoryTranslationService.createTranslation({
+                ...translation,
+                category_id: categoryId
+              });
+            }
+          });
 
           await Promise.all(translationPromises);
 

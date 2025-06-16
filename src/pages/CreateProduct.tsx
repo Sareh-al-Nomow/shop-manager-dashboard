@@ -39,6 +39,7 @@ const CreateProduct = () => {
     name: '',
     sku: '',
     price: '',
+    old_price: '',
     weight: '',
     categoryId: '',
     brandId: '',
@@ -284,6 +285,10 @@ const CreateProduct = () => {
       errors.price = "Price must be a valid number";
     }
 
+    if (formData.old_price && isNaN(parseFloat(formData.old_price))) {
+      errors.old_price = "Old price must be a valid number";
+    }
+
     if (formData.weight && isNaN(parseFloat(formData.weight))) {
       errors.weight = "Weight must be a valid number";
     }
@@ -307,6 +312,7 @@ const CreateProduct = () => {
     return {
       sku: formData.sku,
       price: parseFloat(formData.price),
+      old_price: formData.old_price ? parseFloat(formData.old_price) : undefined,
       weight: formData.weight ? parseFloat(formData.weight) : undefined,
       status: formData.status,
       visibility: formData.visibility,
@@ -556,6 +562,27 @@ const CreateProduct = () => {
                     </div>
                     {formErrors.price && (
                       <p className="text-sm text-red-500 mt-1">{formErrors.price}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="old_price">Old Price</Label>
+                    <div className="flex mt-1">
+                      <Input
+                        id="old_price"
+                        placeholder="Old Price"
+                        className="rounded-r-none"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.old_price}
+                        onChange={handleInputChange}
+                      />
+                      <div className="bg-muted flex items-center justify-center px-3 border border-l-0 border-input rounded-r-md">
+                        USD
+                      </div>
+                    </div>
+                    {formErrors.old_price && (
+                      <p className="text-sm text-red-500 mt-1">{formErrors.old_price}</p>
                     )}
                   </div>
                   <div>

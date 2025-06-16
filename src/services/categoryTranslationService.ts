@@ -25,12 +25,31 @@ const categoryTranslationService = {
   },
 
   /**
+   * Update an existing category translation
+   * @param translationId The ID of the translation to update
+   * @param translationData The translation data to update
+   * @returns Promise with the updated translation data
+   */
+  updateTranslation: async (translationId: number, translationData: {
+    name: string;
+    description?: string;
+    short_description?: string;
+    url_key?: string;
+    meta_title?: string;
+    meta_description?: string;
+    meta_keywords?: string;
+  }) => {
+    const response = await api.put(`/categoryTranslation/${translationId}`, translationData);
+    return response.data;
+  },
+
+  /**
    * Get translations for a category
    * @param categoryId The ID of the category
    * @returns Promise with the list of translations
    */
   getTranslationsForCategory: async (categoryId: number) => {
-    const response = await api.get(`/categoryTranslation/${categoryId}`);
+    const response = await api.get(`/categoryTranslation/category/${categoryId}`);
     return response.data;
   },
 

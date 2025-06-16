@@ -1,15 +1,129 @@
 import api from './api';
 
-export interface Product {
-  id: number;
-  name: string;
-  description?: string;
-  price: number;
-  category_id: number;
-  brand_id?: number;
-  image_url?: string;
+export interface ProductAttribute {
+  product_attribute_value_index_id: number;
+  product_id: number;
+  attribute_id: number;
+  option_id: number;
+  option_text: string;
   created_at: string;
   updated_at: string;
+  attribute: {
+    attribute_id: number;
+    uuid: string;
+    attribute_code: string;
+    attribute_name: string;
+    type: string;
+    is_required: boolean;
+    display_on_frontend: boolean;
+    sort_order: number;
+    is_filterable: boolean;
+    created_at: string;
+    updated_at: string;
+  };
+  option: {
+    attribute_option_id: number;
+    uuid: string;
+    attribute_id: number;
+    attribute_code: string;
+    option_text: string;
+    created_at: string;
+    updated_at: string;
+  };
+}
+
+export interface ProductReview {
+  rating: number;
+}
+
+export interface Product {
+  product_id: number;
+  uuid: string;
+  type: string;
+  variant_group_id: number;
+  visibility: boolean;
+  group_id: number;
+  sku: string;
+  price: number;
+  old_price: number | null;
+  weight: number;
+  tax_class: number;
+  status: boolean;
+  created_at: string;
+  updated_at: string;
+  category_id: number;
+  brand_id: number;
+  description: {
+    product_description_id: number;
+    product_description_product_id: number;
+    name: string;
+    description: string;
+    short_description: string;
+    url_key: string;
+    meta_title: string;
+    meta_description: string;
+    meta_keywords: string;
+    created_at: string;
+    updated_at: string;
+  };
+  images: {
+    product_image_id: number;
+    product_image_product_id: number;
+    origin_image: string;
+    thumb_image: string;
+    listing_image: string;
+    single_image: string;
+    is_main: boolean;
+    created_at: string;
+    updated_at: string;
+  }[];
+  inventory: {
+    product_inventory_id: number;
+    product_inventory_product_id: number;
+    qty: number;
+    manage_stock: boolean;
+    stock_availability: boolean;
+    created_at: string;
+    updated_at: string;
+  };
+  category: {
+    id: number;
+    uuid: string;
+    status: boolean;
+    parent_id: number;
+    include_in_nav: boolean;
+    position: number;
+    show_products: boolean;
+    created_at: string;
+    updated_at: string;
+    description: {
+      category_description_id: number;
+      category_description_category_id: number;
+      name: string;
+      short_description: string;
+      description: string;
+      image: string;
+      meta_title: string;
+      meta_keywords: string;
+      meta_description: string;
+      url_key: string;
+      created_at: string;
+      updated_at: string;
+    };
+  };
+  brand: {
+    id: number;
+    name: string;
+    slug: string;
+    image: string;
+    description: string;
+    isActive: boolean;
+    created_at: string;
+    updated_at: string;
+  };
+  attributes: ProductAttribute[];
+  reviews: ProductReview[];
+  meanRating: number;
 }
 
 export interface ProductParams {
@@ -17,7 +131,10 @@ export interface ProductParams {
   brandId?: number;
   page?: number;
   limit?: number;
-  search?: string;
+  name?: string;
+  sku?: string;
+  visibility?: boolean;
+  status?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
@@ -86,7 +203,10 @@ const productService = {
       if (params.brandId) queryParams.append('brandId', params.brandId.toString());
       if (params.page) queryParams.append('page', params.page.toString());
       if (params.limit) queryParams.append('limit', params.limit.toString());
-      if (params.search) queryParams.append('search', params.search);
+      if (params.name) queryParams.append('name', params.name);
+      if (params.sku) queryParams.append('sku', params.sku);
+      if (params.visibility !== undefined) queryParams.append('visibility', params.visibility.toString());
+      if (params.status !== undefined) queryParams.append('status', params.status.toString());
       if (params.sortBy) queryParams.append('sortBy', params.sortBy);
       if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
     }
@@ -105,7 +225,11 @@ const productService = {
    */
   getProductById: async (id: number) => {
     const response = await api.get(`/products/${id}`);
-    return response.data;
+    // The API now returns { data: [product], total, page, limit, totalPages }
+    // We extract the first product from the data array
+    return response.data.data && response.data.data.length > 0 
+      ? response.data.data[0] 
+      : null;
   },
 
   /**
@@ -180,6 +304,17 @@ const productService = {
 
   // Add other product-related API methods as needed
   // For example: updateProduct, deleteProduct, etc.
+
+  /**
+   * Update an existing product
+   * @param id Product ID to update
+   * @param productData Product data to update
+   * @returns Promise with updated product data
+   */
+  updateProduct: async (id: number, productData: ProductCreateData) => {
+    const response = await api.put(`/products/${id}`, { id, ...productData });
+    return response.data;
+  },
 };
 
 export default productService;

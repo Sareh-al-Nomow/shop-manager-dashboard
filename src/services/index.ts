@@ -12,6 +12,8 @@ import languageService from './languageService';
 import categoryTranslationService from './categoryTranslationService';
 import userService from './userService';
 import roleService from './roleService';
+import collectionService from './collectionService';
+import reviewService from './reviewService';
 
 
 export {
@@ -29,7 +31,9 @@ export {
   languageService,
   categoryTranslationService,
   userService,
-  roleService
+  roleService,
+  collectionService,
+  reviewService
 };
 
 // Default export for convenience
@@ -47,5 +51,7 @@ export default {
   languages: languageService,
   categoryTranslations: categoryTranslationService,
   users: userService,
-  roles: roleService
+  roles: roleService,
+  collections: collectionService,
+  reviews: reviewService
 };

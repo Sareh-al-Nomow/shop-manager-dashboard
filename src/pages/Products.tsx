@@ -253,11 +253,13 @@ const Products = () => {
           page: filters.page,
           limit: filters.limit,
           search: filters.name || undefined,
+          sku: filters.sku || undefined,
           categoryId: filters.categoryId !== 'all' ? parseInt(filters.categoryId) : undefined,
           brandId: filters.brandId !== 'all' ? parseInt(filters.brandId) : undefined,
+          visibility: filters.visibility !== 'all' ? filters.visibility === 'true' : undefined,
+          status: filters.status !== 'all' ? filters.status === 'true' : undefined,
           sortBy: filters.sortBy,
           sortOrder: filters.sortOrder as 'asc' | 'desc',
-          // Add other filters as needed
         };
 
         const result = await productService.getProducts(params);
@@ -412,24 +414,6 @@ const Products = () => {
                       <SelectItem value="all">All</SelectItem>
                       <SelectItem value="true">Active</SelectItem>
                       <SelectItem value="false">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Items per page</label>
-                  <Select 
-                    value={filters.limit.toString()} 
-                    onValueChange={(value) => updateFilter('limit', parseInt(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="10" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="25">25</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -606,7 +590,9 @@ const Products = () => {
                           />
                         </div>
                         <div>
-                          <div className="font-medium">{product.description.name}</div>
+                          <Link to={`/product/${product.product_id}`} className="font-medium hover:underline">
+                            {product.description.name}
+                          </Link>
                           <div className="text-xs text-muted-foreground">{product.sku}</div>
                         </div>
                       </div>
@@ -632,13 +618,17 @@ const Products = () => {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem>
-                            <Eye className="mr-2 h-4 w-4" />
-                            <span>View</span>
+                          <DropdownMenuItem asChild>
+                            <Link to={`/product/${product.product_id}`}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              <span>View</span>
+                            </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" />
-                            <span>Edit</span>
+                          <DropdownMenuItem asChild>
+                            <Link to={`/edit-product/${product.product_id}`}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              <span>Edit</span>
+                            </Link>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-red-600">
@@ -656,65 +646,51 @@ const Products = () => {
         </div>
 
         {/* Pagination controls */}
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {productsData.length > 0 ? (filters.page - 1) * paginationMeta.itemsPerPage + 1 : 0} to {Math.min(filters.page * paginationMeta.itemsPerPage, paginationMeta.totalItems)} of {paginationMeta.totalItems} products
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => updateFilter('page', Math.max(1, filters.page - 1))}
-              disabled={filters.page <= 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              <span className="sr-only">Previous Page</span>
-            </Button>
-
-            <div className="flex items-center space-x-1">
-              {Array.from({ length: Math.min(5, paginationMeta.totalPages) }, (_, i) => {
-                // Show pages around the current page
-                let pageNum;
-                if (paginationMeta.totalPages <= 5) {
-                  // If 5 or fewer pages, show all
-                  pageNum = i + 1;
-                } else if (filters.page <= 3) {
-                  // If near the start, show first 5 pages
-                  pageNum = i + 1;
-                } else if (filters.page >= paginationMeta.totalPages - 2) {
-                  // If near the end, show last 5 pages
-                  pageNum = paginationMeta.totalPages - 4 + i;
-                } else {
-                  // Otherwise show 2 before and 2 after current page
-                  pageNum = filters.page - 2 + i;
-                }
-
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={filters.page === pageNum ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => updateFilter('page', pageNum)}
-                    className="w-8 h-8 p-0"
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
+        {!loading && productsData.length > 0 && (
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              Showing {((filters.page - 1) * filters.limit) + 1} to {Math.min(filters.page * filters.limit, paginationMeta.totalItems)} of {paginationMeta.totalItems} products
             </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => updateFilter('page', Math.min(paginationMeta.totalPages, filters.page + 1))}
-              disabled={filters.page >= paginationMeta.totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-              <span className="sr-only">Next Page</span>
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => updateFilter('page', Math.max(1, filters.page - 1))}
+                disabled={filters.page === 1}
+              >
+                Previous
+              </Button>
+              <div className="text-sm">
+                Page {filters.page} of {paginationMeta.totalPages}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => updateFilter('page', Math.min(paginationMeta.totalPages, filters.page + 1))}
+                disabled={filters.page === paginationMeta.totalPages}
+              >
+                Next
+              </Button>
+              <Select
+                value={filters.limit.toString()}
+                onValueChange={(value) => {
+                  updateFilter('limit', Number(value));
+                  updateFilter('page', 1);
+                }}
+              >
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue placeholder="10 per page" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5 per page</SelectItem>
+                  <SelectItem value="10">10 per page</SelectItem>
+                  <SelectItem value="25">25 per page</SelectItem>
+                  <SelectItem value="50">50 per page</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </AdminLayout>
   );
