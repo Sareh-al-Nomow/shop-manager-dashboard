@@ -16,6 +16,7 @@ export interface Coupon {
     buyx_gety: any;
     max_uses_time_per_coupon: number;
     max_uses_time_per_customer: number;
+
     start_date: string;
     end_date: string;
     created_at: string;

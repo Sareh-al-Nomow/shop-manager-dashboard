@@ -265,15 +265,13 @@ const Products = () => {
         const result = await productService.getProducts(params);
         setProductsData(result.data || []);
 
-        // Update pagination metadata if available
-        if (result.meta) {
-          setPaginationMeta({
-            currentPage: result.meta.currentPage || 1,
-            totalPages: result.meta.totalPages || 1,
-            totalItems: result.meta.totalItems || 0,
-            itemsPerPage: result.meta.itemsPerPage || 10
-          });
-        }
+        // Update pagination metadata from the response
+        setPaginationMeta({
+          currentPage: result.page || 1,
+          totalPages: result.totalPages || 1,
+          totalItems: result.total || 0,
+          itemsPerPage: result.limit || 10
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
       } finally {

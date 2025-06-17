@@ -68,12 +68,19 @@ const EditCoupon = () => {
   useEffect(() => {
     const fetchCoupon = async () => {
       if (!id) return;
-      
+
       setLoadingCoupon(true);
       try {
         const couponData = await couponService.getById(parseInt(id));
-        
+
         // Set form data from coupon
+        const condition = couponData.condition || {};
+
+        // If maximum_percentage_amount exists at root level, move it to condition
+        if (couponData.maximum_percentage_amount) {
+          condition.maximum_percentage_amount = couponData.maximum_percentage_amount;
+        }
+
         setFormData({
           coupon: couponData.coupon || '',
           description: couponData.description || '',
@@ -84,7 +91,7 @@ const EditCoupon = () => {
           max_uses_time_per_coupon: couponData.max_uses_time_per_coupon || 0,
           max_uses_time_per_customer: couponData.max_uses_time_per_customer || 0,
           target_products: couponData.target_products || {},
-          condition: couponData.condition || {},
+          condition: condition,
           user_condition: {
             type: couponData.user_condition?.type || 'all',
             groups: couponData.user_condition?.groups || [],
@@ -93,7 +100,7 @@ const EditCoupon = () => {
           },
           buyx_gety: couponData.buyx_gety || {}
         });
-        
+
         // Set dates
         if (couponData.start_date) {
           setStartDate(new Date(couponData.start_date));
@@ -494,6 +501,30 @@ const EditCoupon = () => {
                 <Label htmlFor="percentage">Percentage discount</Label>
               </div>
             </RadioGroup>
+
+            {formData.discount_type === 'percentage' && (
+              <div className="mt-4">
+                <Label htmlFor="maximumPercentageAmount">Maximum percentage amount</Label>
+                <Input 
+                  id="maximumPercentageAmount" 
+                  type="number"
+                  placeholder="Enter maximum percentage amount" 
+                  className="mt-1"
+                  value={formData.condition?.maximum_percentage_amount || ''}
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value) || 0;
+                    setFormData(prev => ({
+                      ...prev,
+                      condition: {
+                        ...prev.condition,
+                        maximum_percentage_amount: value
+                      }
+                    }));
+                  }}
+                />
+                <p className="text-sm text-muted-foreground mt-1">Maximum amount when using percentage discount</p>
+              </div>
+            )}
           </div>
 
           {/* Order Conditions Section */}

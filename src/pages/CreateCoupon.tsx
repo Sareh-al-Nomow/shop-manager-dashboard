@@ -419,6 +419,29 @@ const CreateCoupon = () => {
                 <Label htmlFor="percentage">Percentage discount</Label>
               </div>
             </RadioGroup>
+
+            {formData.discount_type === 'percentage' && (
+              <div className="mt-4">
+                <Label htmlFor="maximumPercentageAmount">Maximum percentage amount</Label>
+                <Input 
+                  id="maximumPercentageAmount" 
+                  type="number"
+                  placeholder="Enter maximum percentage amount" 
+                  className="mt-1"
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value) || 0;
+                    setFormData(prev => ({
+                      ...prev,
+                      condition: {
+                        ...prev.condition,
+                        maximum_percentage_amount: value
+                      }
+                    }));
+                  }}
+                />
+                <p className="text-sm text-muted-foreground mt-1">Maximum amount when using percentage discount</p>
+              </div>
+            )}
           </div>
 
           {/* Order Conditions Section */}
