@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -43,6 +43,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { settingsService } from "@/services";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -190,11 +191,41 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
 function AdminSidebar() {
   const { logout, user, hasRole } = useAuth();
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch logo from settings when component mounts
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const settings = await settingsService.getAll();
+        const logo = settingsService.getSettingByName(settings, 'store_logo');
+        if (logo) {
+          setLogoUrl(logo);
+        }
+      } catch (error) {
+        console.error('Error fetching logo:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLogo();
+  }, []);
 
   return (
     <Sidebar>
       <SidebarHeader className="h-14 border-b border-sidebar-border px-4 flex items-center">
-        <span className="text-xl font-bold tracking-tight">ShopAdmin</span>
+        {logoUrl ? (
+          <img 
+            src={logoUrl} 
+            alt="Store Logo" 
+            className="max-h-8 max-w-[150px]"
+            onError={() => setLogoUrl(null)} // Fallback to text if image fails to load
+          />
+        ) : (
+          <span className="text-xl font-bold tracking-tight">ShopAdmin</span>
+        )}
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

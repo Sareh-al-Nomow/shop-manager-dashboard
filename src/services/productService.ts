@@ -49,6 +49,7 @@ export interface Product {
   weight: number;
   tax_class: number;
   status: boolean;
+  is_digital?: boolean;
   created_at: string;
   updated_at: string;
   category_id: number;
@@ -150,6 +151,7 @@ export interface ProductCreateData {
   weight?: number;
   tax_class?: number;
   status?: boolean;
+  is_digital?: boolean;
   category_id?: number;
   brand_id?: number;
   description?: {

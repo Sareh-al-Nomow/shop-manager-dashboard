@@ -14,6 +14,8 @@ import userService from './userService';
 import roleService from './roleService';
 import collectionService from './collectionService';
 import reviewService from './reviewService';
+import settingsService from './settingsService';
+import locationService from './locationService';
 
 
 export {
@@ -33,7 +35,9 @@ export {
   userService,
   roleService,
   collectionService,
-  reviewService
+  reviewService,
+  settingsService,
+  locationService
 };
 
 // Default export for convenience
@@ -53,5 +57,7 @@ export default {
   users: userService,
   roles: roleService,
   collections: collectionService,
-  reviews: reviewService
+  reviews: reviewService,
+  settings: settingsService,
+  locations: locationService
 };

@@ -55,6 +55,7 @@ const CreateProduct = () => {
     // Status
     status: true,
     visibility: true,
+    is_digital: false,
 
     // Inventory
     manageStock: true,
@@ -316,6 +317,7 @@ const CreateProduct = () => {
       weight: formData.weight ? parseFloat(formData.weight) : undefined,
       status: formData.status,
       visibility: formData.visibility,
+      is_digital: formData.is_digital,
       category_id: formData.categoryId !== "none" ? parseInt(formData.categoryId) : undefined,
       brand_id: formData.brandId !== "none" ? parseInt(formData.brandId) : undefined,
       tax_class: formData.taxClassId !== "none" ? parseInt(formData.taxClassId) : undefined,
@@ -956,6 +958,26 @@ const CreateProduct = () => {
                   </RadioGroup>
                   {formErrors.visibility && (
                     <p className="text-sm text-red-500 mt-1">{formErrors.visibility}</p>
+                  )}
+                </div>
+
+                <div>
+                  <p className="mb-2">Digital Product</p>
+                  <RadioGroup
+                    value={formData.is_digital ? "digital" : "physical"}
+                    onValueChange={(value) => handleRadioChange('is_digital', value === "digital")}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="physical" id="physical" />
+                      <Label htmlFor="physical">Physical Product</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="digital" id="digital" />
+                      <Label htmlFor="digital">Digital Product</Label>
+                    </div>
+                  </RadioGroup>
+                  {formErrors.is_digital && (
+                    <p className="text-sm text-red-500 mt-1">{formErrors.is_digital}</p>
                   )}
                 </div>
               </CardContent>

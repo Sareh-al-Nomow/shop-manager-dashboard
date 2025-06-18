@@ -483,10 +483,10 @@ const EditProduct = () => {
       const productResponse = await productService.updateProduct(productId, productData);
 
       // Step 2: Save product images
-      // if (productImages.length > 0) {
-      //   const imageData = formatImageData(productId);
-      //   await productService.saveProductImages(imageData);
-      // }
+      if (productImages.length > 0) {
+        const imageData = formatImageData(productId);
+        await productService.saveProductImages(imageData);
+      }
 
       // Step 3: Save product attributes
       if (Object.keys(selectedAttributeValues).length > 0) {
