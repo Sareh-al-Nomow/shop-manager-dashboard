@@ -86,12 +86,12 @@ export default function CreateCategory() {
     meta_keywords: ''
   });
 
-  // Fetch parent categories
+  // Fetch parent categories (only root categories)
   useEffect(() => {
     const fetchParentCategories = async () => {
       setLoadingCategories(true);
       try {
-        const result = await categoryService.getCategories();
+        const result = await categoryService.getRootCategories();
         const { data } = result;
 
         // Extract categories with their names

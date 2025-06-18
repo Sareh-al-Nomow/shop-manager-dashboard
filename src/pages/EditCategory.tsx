@@ -168,12 +168,12 @@ export default function EditCategory() {
     fetchCategoryData();
   }, [categoryId, navigate, toast]);
 
-  // Fetch parent categories
+  // Fetch parent categories (only root categories)
   useEffect(() => {
     const fetchParentCategories = async () => {
       setLoadingCategories(true);
       try {
-        const result = await categoryService.getCategories();
+        const result = await categoryService.getRootCategories();
 
         // Check if result and result.data exist
         if (!result || !result.data) {

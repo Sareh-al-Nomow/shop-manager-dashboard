@@ -90,12 +90,15 @@ const categoryService = {
 
   /**
    * Get root categories (parentId = null)
+   * @param limit Optional limit parameter to restrict the number of categories returned
    * @returns Promise with root categories data
    */
-  getRootCategories: async () => {
+  getRootCategories: async (limit?: number) => {
     const queryParams = new URLSearchParams();
     queryParams.append('parentId', 'null');
-    queryParams.append('limit', '10');
+    if (limit) {
+      queryParams.append('limit', limit.toString());
+    }
 
     const response = await api.get(`/categories?${queryParams.toString()}`);
     return response.data;
