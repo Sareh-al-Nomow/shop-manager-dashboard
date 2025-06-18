@@ -149,7 +149,7 @@ const CreateProduct = () => {
     const fetchCategories = async () => {
       try {
         setLoading(prev => ({ ...prev, categories: true }));
-        const response = await categoryService.getCategories();
+        const response = await categoryService.getCategoriesShorts();
         setCategories(response.data || []);
         setError(prev => ({ ...prev, categories: null }));
       } catch (err) {
@@ -168,7 +168,7 @@ const CreateProduct = () => {
     const fetchBrands = async () => {
       try {
         setLoading(prev => ({ ...prev, brands: true }));
-        const response = await brandService.getBrands();
+        const response = await brandService.getBrandsShorts();
         setBrands(response.data || []);
         setError(prev => ({ ...prev, brands: null }));
       } catch (err) {

@@ -53,7 +53,7 @@ export default function EditCategory() {
     status: true,
     include_in_nav: true,
     show_products: true,
-    parent_id: 0,
+    parent_id: null,
     position: '1',
     description: {
       name: '',
@@ -71,7 +71,7 @@ export default function EditCategory() {
     status: true,
     include_in_nav: true,
     show_products: true,
-    parent_id: 0,
+    parent_id: null,
     position: '1',
     description: {
       name: '',
@@ -168,12 +168,12 @@ export default function EditCategory() {
     fetchCategoryData();
   }, [categoryId, navigate, toast]);
 
-  // Fetch parent categories (only root categories)
+  // Fetch parent categories
   useEffect(() => {
     const fetchParentCategories = async () => {
       setLoadingCategories(true);
       try {
-        const result = await categoryService.getRootCategories();
+        const result = await categoryService.getCategories();
 
         // Check if result and result.data exist
         if (!result || !result.data) {
@@ -479,7 +479,7 @@ export default function EditCategory() {
   const handleParentChange = (value: string) => {
     setFormData({
       ...formData,
-      parent_id: value === 'none' ? 0 : parseInt(value)
+      parent_id: value === 'none' ? null : parseInt(value)
     });
   };
 
@@ -531,10 +531,10 @@ export default function EditCategory() {
         apiData.show_products = formData.show_products;
       }
 
-      // Handle parent_id (convert 'none' to 0 or convert to number)
+      // Handle parent_id (convert 'none' to null or convert to number)
       if (!isEqual(formData.parent_id, originalFormData.parent_id)) {
         if (formData.parent_id === 'none' || formData.parent_id === null) {
-          apiData.parent_id = 0;
+          apiData.parent_id = '';
         } else if (formData.parent_id) {
           apiData.parent_id = formData.parent_id;
         }

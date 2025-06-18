@@ -86,12 +86,12 @@ export default function CreateCategory() {
     meta_keywords: ''
   });
 
-  // Fetch parent categories (only root categories)
+  // Fetch parent categories
   useEffect(() => {
     const fetchParentCategories = async () => {
       setLoadingCategories(true);
       try {
-        const result = await categoryService.getRootCategories();
+        const result = await categoryService.getCategories();
         const { data } = result;
 
         // Extract categories with their names
@@ -514,9 +514,9 @@ export default function CreateCategory() {
 
       };
 
-      // Handle parent_id (convert 'none' to 0 or convert to number)
+      // Handle parent_id (convert 'none' to null or convert to number)
       if (formData.parent_id === 'none') {
-        apiData.parent_id = 0;
+        apiData.parent_id = '';
       } else if (formData.parent_id) {
         apiData.parent_id = formData.parent_id;
       }

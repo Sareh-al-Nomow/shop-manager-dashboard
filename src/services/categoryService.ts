@@ -49,7 +49,6 @@ export interface CategoryParams {
   status?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-  lang?: string;
 }
 
 /**
@@ -78,7 +77,6 @@ const categoryService = {
       if (params.status !== undefined) queryParams.append('status', params.status.toString());
       if (params.sortBy !== undefined) queryParams.append('sortBy', params.sortBy);
       if (params.sortOrder !== undefined) queryParams.append('sortOrder', params.sortOrder);
-      if (params.lang !== undefined) queryParams.append('lang', params.lang);
     }
 
     const queryString = queryParams.toString();
@@ -88,17 +86,24 @@ const categoryService = {
     return response.data;
   },
 
+  getCategoriesShorts: async () => {
+
+
+
+    const endpoint =  '/categories/shorts';
+
+    const response = await api.get(endpoint);
+    return response.data;
+  },
+
   /**
    * Get root categories (parentId = null)
-   * @param limit Optional limit parameter to restrict the number of categories returned
    * @returns Promise with root categories data
    */
-  getRootCategories: async (limit?: number) => {
+  getRootCategories: async () => {
     const queryParams = new URLSearchParams();
     queryParams.append('parentId', 'null');
-    if (limit) {
-      queryParams.append('limit', limit.toString());
-    }
+    queryParams.append('limit', '10');
 
     const response = await api.get(`/categories?${queryParams.toString()}`);
     return response.data;

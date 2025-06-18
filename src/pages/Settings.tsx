@@ -15,20 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { settingsService, Setting, SettingUpdatePayload, locationService, languageService } from "@/services";
+import { settingsService, Setting, SettingUpdatePayload, locationService } from "@/services";
 import { Country, City } from "@/services/locationService";
-import { LanguageData } from "@/services/languageService";
 import { CountryCitySelect } from "@/components/ui/country-city-select";
 import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -46,7 +36,7 @@ const storeSettingsSchema = z.object({
   post_code: z.string().min(3).max(20),
   default_language: z.string().min(2).max(50),
   default_currency: z.string().min(2).max(10),
-  store_logo: z.string() // Allow any string (URL or empty)
+  store_logo: z.string().url()
 });
 
 type StoreSettingsFormValues = z.infer<typeof storeSettingsSchema>;
@@ -56,19 +46,10 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [availableLanguages, setAvailableLanguages] = useState<LanguageData[]>([]);
+  const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
   const [availableCurrencies, setAvailableCurrencies] = useState<string[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [isAddLanguageOpen, setIsAddLanguageOpen] = useState(false);
-  const [newLanguage, setNewLanguage] = useState<{ languageCode: string; languageName: string; isActive: boolean }>({
-    languageCode: '',
-    languageName: '',
-    isActive: true
-  });
-  const [addingLanguage, setAddingLanguage] = useState(false);
-  const [selectedLogo, setSelectedLogo] = useState<File | null>(null);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Initialize form with react-hook-form
   const form = useForm<StoreSettingsFormValues>({
@@ -95,23 +76,13 @@ const Settings = () => {
         const data = await settingsService.getAll();
         setSettings(data);
 
-        // Fetch languages from API
-        const languages = await languageService.getLanguages();
-        console.log('Languages from API:', languages);
-        console.log('Languages type:', typeof languages);
-        console.log('Is languages an array?', Array.isArray(languages));
-        if (Array.isArray(languages)) {
-          console.log('Languages length:', languages.length);
-          if (languages.length > 0) {
-            console.log('First language:', languages[0]);
-          }
-        }
-        setAvailableLanguages(languages);
-
-
-
-        // Parse available currencies
+        // Parse available languages and currencies
+        const languages = settingsService.getSettingByName(data, 'available_languages');
         const currencies = settingsService.getSettingByName(data, 'available_currencies');
+
+        if (Array.isArray(languages)) {
+          setAvailableLanguages(languages);
+        }
 
         if (Array.isArray(currencies)) {
           setAvailableCurrencies(currencies);
@@ -161,61 +132,6 @@ const Settings = () => {
       toast.error("Failed to save settings. Please try again.");
     } finally {
       setSaving(false);
-    }
-  };
-
-  // Handle adding a new language
-  const handleAddLanguage = async () => {
-    if (!newLanguage.languageCode || !newLanguage.languageName) {
-      toast.error("Language code and name are required");
-      return;
-    }
-
-    setAddingLanguage(true);
-    try {
-      await languageService.addLanguage(newLanguage);
-
-      // Refresh languages list
-      const languages = await languageService.getLanguages();
-      setAvailableLanguages(languages);
-
-      // Reset form and close modal
-      setNewLanguage({
-        languageCode: '',
-        languageName: '',
-        isActive: true
-      });
-      setIsAddLanguageOpen(false);
-
-      toast.success("Language added successfully!");
-    } catch (err) {
-      console.error('Error adding language:', err);
-      toast.error("Failed to add language. Please try again.");
-    } finally {
-      setAddingLanguage(false);
-    }
-  };
-
-  // Handle logo file upload
-  const handleLogoUpload = async (file: File) => {
-    if (!file) return;
-
-    setUploadingLogo(true);
-    try {
-      const response = await settingsService.uploadLogo(file);
-
-      // API returns response with message and logoUrl
-      if (response && response.logoUrl) {
-        form.setValue("store_logo", response.logoUrl, { shouldValidate: true });
-        toast.success(response.message || "Logo uploaded successfully!");
-      } else {
-        toast.error("Failed to upload logo. Invalid response from server.");
-      }
-    } catch (err) {
-      console.error('Error uploading logo:', err);
-      toast.error("Failed to upload logo. Please try again.");
-    } finally {
-      setUploadingLogo(false);
     }
   };
 
@@ -272,50 +188,12 @@ const Settings = () => {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label htmlFor="store_logo">Store Logo</Label>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex gap-2">
-                        <Input 
-                          id="store_logo" 
-                          {...form.register("store_logo")} 
-                          aria-invalid={form.formState.errors.store_logo ? "true" : "false"}
-                          placeholder="Logo URL (automatically updated when you upload a file)"
-                          readOnly
-                        />
-                        <div className="relative">
-                          <Input
-                            type="file"
-                            id="logo-upload"
-                            className="absolute inset-0 opacity-0 cursor-pointer"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                setSelectedLogo(file);
-                                handleLogoUpload(file);
-                              }
-                            }}
-                          />
-                          <Button 
-                            type="button" 
-                            variant="outline"
-                            disabled={uploadingLogo}
-                          >
-                            {uploadingLogo ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                Uploading...
-                              </>
-                            ) : (
-                              'Upload Logo'
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Upload a logo image (PNG, JPG, SVG). Recommended size: 200x100px.
-                      </p>
-                    </div>
+                    <Label htmlFor="store_logo">Store Logo URL</Label>
+                    <Input 
+                      id="store_logo" 
+                      {...form.register("store_logo")} 
+                      aria-invalid={form.formState.errors.store_logo ? "true" : "false"}
+                    />
                     {form.formState.errors.store_logo && (
                       <p className="text-red-500 text-sm">{form.formState.errors.store_logo.message}</p>
                     )}
@@ -433,70 +311,7 @@ const Settings = () => {
                 <Separator />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="default_language">Default Language</Label>
-                      <Dialog open={isAddLanguageOpen} onOpenChange={setIsAddLanguageOpen}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            Add Language
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Add New Language</DialogTitle>
-                            <DialogDescription>
-                              Add a new language to your store. Fill in the details below.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                            <div className="grid gap-2">
-                              <Label htmlFor="language-code">Language Code</Label>
-                              <Input
-                                id="language-code"
-                                placeholder="en"
-                                value={newLanguage.languageCode}
-                                onChange={(e) => setNewLanguage({...newLanguage, languageCode: e.target.value})}
-                              />
-                              <p className="text-xs text-muted-foreground">
-                                Use standard language codes (e.g., en, fr, es)
-                              </p>
-                            </div>
-                            <div className="grid gap-2">
-                              <Label htmlFor="language-name">Language Name</Label>
-                              <Input
-                                id="language-name"
-                                placeholder="English"
-                                value={newLanguage.languageName}
-                                onChange={(e) => setNewLanguage({...newLanguage, languageName: e.target.value})}
-                              />
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Switch
-                                id="language-active"
-                                checked={newLanguage.isActive}
-                                onCheckedChange={(checked) => setNewLanguage({...newLanguage, isActive: checked})}
-                              />
-                              <Label htmlFor="language-active">Active</Label>
-                            </div>
-                          </div>
-                          <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsAddLanguageOpen(false)}>
-                              Cancel
-                            </Button>
-                            <Button onClick={handleAddLanguage} disabled={addingLanguage}>
-                              {addingLanguage ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                  Adding...
-                                </>
-                              ) : (
-                                'Add Language'
-                              )}
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
+                    <Label htmlFor="default_language">Default Language</Label>
                     <Select 
                       value={form.watch("default_language")} 
                       onValueChange={(value) => form.setValue("default_language", value, { shouldValidate: true })}
@@ -507,8 +322,8 @@ const Settings = () => {
                       <SelectContent>
                         {availableLanguages.length > 0 ? (
                           availableLanguages.map((lang) => (
-                            <SelectItem key={lang.languageCode} value={lang.languageCode}>
-                              {lang.languageCode.toUpperCase()} - {lang.languageName}
+                            <SelectItem key={lang} value={lang}>
+                              {lang.toUpperCase()} - {getLanguageName(lang)}
                             </SelectItem>
                           ))
                         ) : (

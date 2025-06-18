@@ -57,6 +57,14 @@ const brandService = {
     return response.data;
   },
 
+  getBrandsShorts: async () => {
+
+    const endpoint =  '/brands/shorts';
+
+    const response = await api.get(endpoint);
+    return response.data;
+  },
+
   /**
    * Get a brand by ID
    * @param id Brand ID to retrieve
