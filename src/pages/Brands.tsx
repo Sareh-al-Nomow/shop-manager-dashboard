@@ -28,15 +28,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Tags, 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  ChevronLeft, 
+import {
+  Tags,
+  Search,
+  Filter,
+  MoreVertical,
+  Edit,
+  Trash2,
+  Eye,
+  ChevronLeft,
   ChevronRight,
   ArrowUpDown,
   X
@@ -148,10 +148,20 @@ export default function Brands() {
       };
 
       const result = await brandService.getBrands(params);
-      setBrandsData(result.data || []);
 
-      // Update pagination metadata if available
-      if (result.meta) {
+      // Check if the response has the new format with pagination at the top level
+      if (Array.isArray(result.data) && result.total !== undefined) {
+        // New API response format
+        setBrandsData(result.data || []);
+        setPaginationMeta({
+          currentPage: result.page || 1,
+          totalPages: result.totalPages || 1,
+          totalItems: result.total || 0,
+          itemsPerPage: result.limit || 10
+        });
+      } else if (result.meta) {
+        // Old API response format with meta property
+        setBrandsData(result.data || []);
         setPaginationMeta({
           currentPage: result.meta.currentPage || 1,
           totalPages: result.meta.totalPages || 1,
@@ -199,10 +209,20 @@ export default function Brands() {
         };
 
         const result = await brandService.getBrands(params);
-        setBrandsData(result.data || []);
 
-        // Update pagination metadata if available
-        if (result.meta) {
+        // Check if the response has the new format with pagination at the top level
+        if (Array.isArray(result.data) && result.total !== undefined) {
+          // New API response format
+          setBrandsData(result.data || []);
+          setPaginationMeta({
+            currentPage: result.page || 1,
+            totalPages: result.totalPages || 1,
+            totalItems: result.total || 0,
+            itemsPerPage: result.limit || 10
+          });
+        } else if (result.meta) {
+          // Old API response format with meta property
+          setBrandsData(result.data || []);
           setPaginationMeta({
             currentPage: result.meta.currentPage || 1,
             totalPages: result.meta.totalPages || 1,
@@ -210,11 +230,12 @@ export default function Brands() {
             itemsPerPage: result.meta.itemsPerPage || 10
           });
         } else {
-          // Set default pagination metadata if not available in the response
+          // Fallback if no pagination info is available
+          setBrandsData(Array.isArray(result) ? result : (result.data || []));
           setPaginationMeta({
             currentPage: 1,
             totalPages: 1,
-            totalItems: result.data?.length || 0,
+            totalItems: Array.isArray(result) ? result.length : (result.data?.length || 0),
             itemsPerPage: filters.limit
           });
         }
@@ -229,349 +250,349 @@ export default function Brands() {
   }, [filters]);
 
   return (
-    <AdminLayout>
-      <div className="space-y-4 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Brands</h1>
-            <p className="text-muted-foreground">Manage your product brands</p>
-          </div>
-          <Link to="/create-brand">
-            <Button>
-              <Tags className="mr-2 h-4 w-4" />
-              Add Brand
-            </Button>
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search by name..."
-              className="pl-8 w-full md:w-80"
-              value={filters.search}
-              onChange={(e) => updateFilter('search', e.target.value)}
-            />
-          </div>
-          <Popover open={showFilters} onOpenChange={setShowFilters}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="icon" className={showFilters ? "bg-accent" : ""}>
-                <Filter className="h-4 w-4" />
+      <AdminLayout>
+        <div className="space-y-4 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Brands</h1>
+              <p className="text-muted-foreground">Manage your product brands</p>
+            </div>
+            <Link to="/create-brand">
+              <Button>
+                <Tags className="mr-2 h-4 w-4" />
+                Add Brand
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-4" align="end">
-              <div className="space-y-4">
-                <h4 className="font-medium">Filters</h4>
+            </Link>
+          </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Status</label>
-                  <Select 
-                    value={filters.isActive === true ? 'true' : filters.isActive === false ? 'false' : 'all'} 
-                    onValueChange={(value) => updateFilter('isActive', value === 'true' ? true : value === 'false' ? false : 'all')}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="true">Active</SelectItem>
-                      <SelectItem value="false">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                  type="search"
+                  placeholder="Search by name..."
+                  className="pl-8 w-full md:w-80"
+                  value={filters.search}
+                  onChange={(e) => updateFilter('search', e.target.value)}
+              />
+            </div>
+            <Popover open={showFilters} onOpenChange={setShowFilters}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="icon" className={showFilters ? "bg-accent" : ""}>
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-4" align="end">
+                <div className="space-y-4">
+                  <h4 className="font-medium">Filters</h4>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Items per page</label>
-                  <Select 
-                    value={filters.limit.toString()} 
-                    onValueChange={(value) => updateFilter('limit', parseInt(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="10" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="25">25</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Status</label>
+                    <Select
+                        value={filters.isActive === true ? 'true' : filters.isActive === false ? 'false' : 'all'}
+                        onValueChange={(value) => updateFilter('isActive', value === 'true' ? true : value === 'false' ? false : 'all')}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="All" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="true">Active</SelectItem>
+                        <SelectItem value="false">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="flex items-center justify-between pt-2">
-                  <Button variant="outline" size="sm" onClick={resetFilters}>
-                    Reset
-                  </Button>
-                  <Button size="sm" onClick={() => setShowFilters(false)}>
-                    Apply Filters
-                  </Button>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Items per page</label>
+                    <Select
+                        value={filters.limit.toString()}
+                        onValueChange={(value) => updateFilter('limit', parseInt(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="10" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="25">25</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <Button variant="outline" size="sm" onClick={resetFilters}>
+                      Reset
+                    </Button>
+                    <Button size="sm" onClick={() => setShowFilters(false)}>
+                      Apply Filters
+                    </Button>
+                  </div>
                 </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Active filters display */}
+          {(filters.search || filters.isActive !== 'all') && (
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="text-sm text-muted-foreground">Active filters:</span>
+
+                {filters.search && (
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      Name: {filters.search}
+                      <X
+                          className="h-3 w-3 cursor-pointer"
+                          onClick={() => updateFilter('search', '')}
+                      />
+                    </Badge>
+                )}
+
+                {filters.isActive !== 'all' && (
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      Status: {filters.isActive === true ? 'Active' : 'Inactive'}
+                      <X
+                          className="h-3 w-3 cursor-pointer"
+                          onClick={() => updateFilter('isActive', 'all')}
+                      />
+                    </Badge>
+                )}
+
+                {(filters.search || filters.isActive !== 'all') && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={resetFilters}
+                    >
+                      Clear all
+                    </Button>
+                )}
               </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+          )}
 
-        {/* Active filters display */}
-        {(filters.search || filters.isActive !== 'all') && (
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-sm text-muted-foreground">Active filters:</span>
-
-            {filters.search && (
-              <Badge variant="outline" className="flex items-center gap-1">
-                Name: {filters.search}
-                <X 
-                  className="h-3 w-3 cursor-pointer" 
-                  onClick={() => updateFilter('search', '')}
-                />
-              </Badge>
-            )}
-
-            {filters.isActive !== 'all' && (
-              <Badge variant="outline" className="flex items-center gap-1">
-                Status: {filters.isActive === true ? 'Active' : 'Inactive'}
-                <X 
-                  className="h-3 w-3 cursor-pointer" 
-                  onClick={() => updateFilter('isActive', 'all')}
-                />
-              </Badge>
-            )}
-
-            {(filters.search || filters.isActive !== 'all') && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-7 text-xs" 
-                onClick={resetFilters}
-              >
-                Clear all
-              </Button>
-            )}
-          </div>
-        )}
-
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead 
-                  className="w-[80px] cursor-pointer"
-                  onClick={() => toggleSort('id')}
-                >
-                  <div className="flex items-center">
-                    ID
-                    {filters.sortBy === 'id' && (
-                      <ArrowUpDown className={`ml-2 h-4 w-4 ${filters.sortOrder === 'asc' ? 'rotate-180' : ''}`} />
-                    )}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer"
-                  onClick={() => toggleSort('name')}
-                >
-                  <div className="flex items-center">
-                    Name
-                    {filters.sortBy === 'name' && (
-                      <ArrowUpDown className={`ml-2 h-4 w-4 ${filters.sortOrder === 'asc' ? 'rotate-180' : ''}`} />
-                    )}
-                  </div>
-                </TableHead>
-                <TableHead>Logo</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead 
-                  className="cursor-pointer"
-                  onClick={() => toggleSort('isActive')}
-                >
-                  <div className="flex items-center">
-                    Status
-                    {filters.sortBy === 'isActive' && (
-                      <ArrowUpDown className={`ml-2 h-4 w-4 ${filters.sortOrder === 'asc' ? 'rotate-180' : ''}`} />
-                    )}
-                  </div>
-                </TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">
-                    Loading brands...
-                  </TableCell>
-                </TableRow>
-              ) : error ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-red-600">
-                    {error}
-                  </TableCell>
-                </TableRow>
-              ) : brandsData.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center">
-                    No brands found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                brandsData.map((brand) => (
-                  <TableRow key={brand.id}>
-                    <TableCell>{brand.id}</TableCell>
-                    <TableCell className="font-medium">{brand.name}</TableCell>
-                    <TableCell>
-                      {brand.image ? (
-                        <img 
-                          src={brand.image}
-                          alt={brand.name} 
-                          className="h-10 w-10 object-contain"
-                        />
-                      ) : (
-                        <span className="text-muted-foreground">No logo</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {brand.slug ? (
-                        <span className="line-clamp-2">{brand.slug}</span>
-                      ) : (
-                        <span className="text-muted-foreground">No description</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={brand.isActive ? 
-                          "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100" : 
-                          "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100"}
-                      >
-                        {brand.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem asChild>
-                            <Link to={`/brand/${brand.id}`}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              <span>View</span>
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link to={`/edit-brand/${brand.id}`}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              <span>Edit</span>
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="text-red-600"
-                            onClick={() => {
-                              setBrandToDelete(brand);
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Delete</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* Pagination controls */}
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {brandsData.length > 0 ? (filters.page - 1) * paginationMeta.itemsPerPage + 1 : 0} to {Math.min(filters.page * paginationMeta.itemsPerPage, paginationMeta.totalItems)} of {paginationMeta.totalItems} brands
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => updateFilter('page', Math.max(1, filters.page - 1))}
-              disabled={filters.page <= 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              <span className="sr-only">Previous Page</span>
-            </Button>
-
-            <div className="flex items-center space-x-1">
-              {Array.from({ length: Math.min(5, paginationMeta.totalPages) }, (_, i) => {
-                // Show pages around the current page
-                let pageNum;
-                if (paginationMeta.totalPages <= 5) {
-                  // If 5 or fewer pages, show all
-                  pageNum = i + 1;
-                } else if (filters.page <= 3) {
-                  // If near the start, show first 5 pages
-                  pageNum = i + 1;
-                } else if (filters.page >= paginationMeta.totalPages - 2) {
-                  // If near the end, show last 5 pages
-                  pageNum = paginationMeta.totalPages - 4 + i;
-                } else {
-                  // Otherwise show 2 before and 2 after current page
-                  pageNum = filters.page - 2 + i;
-                }
-
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={filters.page === pageNum ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => updateFilter('page', pageNum)}
-                    className="w-8 h-8 p-0"
+                  <TableHead
+                      className="w-[80px] cursor-pointer"
+                      onClick={() => toggleSort('id')}
                   >
-                    {pageNum}
-                  </Button>
-                );
-              })}
+                    <div className="flex items-center">
+                      ID
+                      {filters.sortBy === 'id' && (
+                          <ArrowUpDown className={`ml-2 h-4 w-4 ${filters.sortOrder === 'asc' ? 'rotate-180' : ''}`} />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                      className="cursor-pointer"
+                      onClick={() => toggleSort('name')}
+                  >
+                    <div className="flex items-center">
+                      Name
+                      {filters.sortBy === 'name' && (
+                          <ArrowUpDown className={`ml-2 h-4 w-4 ${filters.sortOrder === 'asc' ? 'rotate-180' : ''}`} />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead>Logo</TableHead>
+                  <TableHead>Slug</TableHead>
+                  <TableHead
+                      className="cursor-pointer"
+                      onClick={() => toggleSort('isActive')}
+                  >
+                    <div className="flex items-center">
+                      Status
+                      {filters.sortBy === 'isActive' && (
+                          <ArrowUpDown className={`ml-2 h-4 w-4 ${filters.sortOrder === 'asc' ? 'rotate-180' : ''}`} />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center">
+                        Loading brands...
+                      </TableCell>
+                    </TableRow>
+                ) : error ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-red-600">
+                        {error}
+                      </TableCell>
+                    </TableRow>
+                ) : brandsData.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center">
+                        No brands found.
+                      </TableCell>
+                    </TableRow>
+                ) : (
+                    brandsData.map((brand) => (
+                        <TableRow key={brand.id}>
+                          <TableCell>{brand.id}</TableCell>
+                          <TableCell className="font-medium">{brand.name}</TableCell>
+                          <TableCell>
+                            {brand.image ? (
+                                <img
+                                    src={brand.image}
+                                    alt={brand.name}
+                                    className="h-10 w-10 object-contain"
+                                />
+                            ) : (
+                                <span className="text-muted-foreground">No logo</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {brand.slug ? (
+                                <span className="line-clamp-2">{brand.slug}</span>
+                            ) : (
+                                <span className="text-muted-foreground">No description</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                                variant="outline"
+                                className={brand.isActive ?
+                                    "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100" :
+                                    "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100"}
+                            >
+                              {brand.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                  <Link to={`/brand/${brand.id}`}>
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    <span>View</span>
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link to={`/edit-brand/${brand.id}`}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    <span>Edit</span>
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    className="text-red-600"
+                                    onClick={() => {
+                                      setBrandToDelete(brand);
+                                      setDeleteDialogOpen(true);
+                                    }}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  <span>Delete</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                    ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Pagination controls */}
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              Showing {brandsData.length > 0 ? (filters.page - 1) * paginationMeta.itemsPerPage + 1 : 0} to {Math.min(filters.page * paginationMeta.itemsPerPage, paginationMeta.totalItems)} of {paginationMeta.totalItems} brands
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => updateFilter('page', Math.min(paginationMeta.totalPages, filters.page + 1))}
-              disabled={filters.page >= paginationMeta.totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-              <span className="sr-only">Next Page</span>
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updateFilter('page', Math.max(1, filters.page - 1))}
+                  disabled={filters.page <= 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only">Previous Page</span>
+              </Button>
+
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, paginationMeta.totalPages) }, (_, i) => {
+                  // Show pages around the current page
+                  let pageNum;
+                  if (paginationMeta.totalPages <= 5) {
+                    // If 5 or fewer pages, show all
+                    pageNum = i + 1;
+                  } else if (filters.page <= 3) {
+                    // If near the start, show first 5 pages
+                    pageNum = i + 1;
+                  } else if (filters.page >= paginationMeta.totalPages - 2) {
+                    // If near the end, show last 5 pages
+                    pageNum = paginationMeta.totalPages - 4 + i;
+                  } else {
+                    // Otherwise show 2 before and 2 after current page
+                    pageNum = filters.page - 2 + i;
+                  }
+
+                  return (
+                      <Button
+                          key={pageNum}
+                          variant={filters.page === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => updateFilter('page', pageNum)}
+                          className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                  );
+                })}
+              </div>
+
+              <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updateFilter('page', Math.min(paginationMeta.totalPages, filters.page + 1))}
+                  disabled={filters.page >= paginationMeta.totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+                <span className="sr-only">Next Page</span>
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the brand
-              {brandToDelete && <strong> "{brandToDelete.name}"</strong>} and remove it from our servers.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteBrand}
-              disabled={deleteLoading}
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-            >
-              {deleteLoading ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </AdminLayout>
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the brand
+                {brandToDelete && <strong> "{brandToDelete.name}"</strong>} and remove it from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                  onClick={handleDeleteBrand}
+                  disabled={deleteLoading}
+                  className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              >
+                {deleteLoading ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </AdminLayout>
   );
 }
