@@ -257,20 +257,37 @@ const productService = {
 
     // Add images
     imageData.images.forEach((image) => {
-      // Convert base64 to blob
-      const base64Response = image.origin_image.split(',')[1];
-      const byteCharacters = atob(base64Response);
-      const byteNumbers = new Array(byteCharacters.length);
+      try {
+        // Check if the image is a data URL
+        if (!image.origin_image || !image.origin_image.includes(',')) {
+          console.error('Invalid image format: Not a data URL');
+          return; // Skip this image
+        }
 
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
+        // Convert base64 to blob
+        const base64Response = image.origin_image.split(',')[1];
+
+        // Clean the base64 string to remove any invalid characters
+        // Replace any characters that are not valid in a base64 string
+        const cleanedBase64 = base64Response.replace(/[^A-Za-z0-9+/=]/g, '');
+
+        // Decode the cleaned base64 string
+        const byteCharacters = atob(cleanedBase64);
+        const byteNumbers = new Array(byteCharacters.length);
+
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'image/png' });
+
+        // Append to form data - use 'images' as the key for all images
+        formData.append('images', blob);
+      } catch (error) {
+        console.error('Error processing image:', error);
+        // Continue with other images even if one fails
       }
-
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'image/png' });
-
-      // Append to form data - use 'images' as the key for all images
-      formData.append('images', blob);
     });
 
     const response = await api.post('/product-images', formData, {
@@ -314,8 +331,12 @@ const productService = {
    * @returns Promise with updated product data
    */
   updateProduct: async (id: number, productData: ProductCreateData) => {
-    const response = await api.put(`/products/${id}`, { ...productData });
-    return response.data;
+    const response = await api.put(`/products/${id}`, productData);
+    // The API returns { data: [product], total, page, limit, totalPages }
+    // We extract the first product from the data array
+    return response.data.data && response.data.data.length > 0 
+      ? response.data.data[0] 
+      : null;
   },
 };
 

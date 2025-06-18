@@ -29,6 +29,7 @@ const EditProduct = () => {
   const productId = id ? parseInt(id) : 0;
 
   const [productImages, setProductImages] = useState<string[]>([]);
+  const [originalImages, setOriginalImages] = useState<string[]>([]);
   const [imageErrors, setImageErrors] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -191,6 +192,7 @@ const EditProduct = () => {
         if (product.images && product.images.length > 0) {
           const images = product.images.map(img => img.origin_image);
           setProductImages(images);
+          setOriginalImages(images); // Store original images for comparison
         }
 
         // Set attribute group and values if available
@@ -344,23 +346,48 @@ const EditProduct = () => {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
-    // For edit mode, we don't require any fields, but we validate the format of provided fields
+    // For edit mode, we don't require most fields, but we validate the format of provided fields
+
+    // Required fields validation
+    if (!formData.categoryId || formData.categoryId === "none") {
+      errors.categoryId = "Category is required";
+    }
+
+    if (!formData.brandId || formData.brandId === "none") {
+      errors.brandId = "Brand is required";
+    }
 
     // Numeric fields validation - only validate if a value is provided
-    if (formData.price && formData.price.trim() && isNaN(parseFloat(formData.price))) {
-      errors.price = "Price must be a valid number";
+    if (formData.price && formData.price.trim()) {
+      if (isNaN(parseFloat(formData.price))) {
+        errors.price = "Price must be a valid number";
+      } else if (parseFloat(formData.price) <= 0) {
+        errors.price = "Price must be greater than 0";
+      }
     }
 
-    if (formData.old_price && formData.old_price.trim() && isNaN(parseFloat(formData.old_price))) {
-      errors.old_price = "Old price must be a valid number";
+    if (formData.old_price && formData.old_price.trim()) {
+      if (isNaN(parseFloat(formData.old_price))) {
+        errors.old_price = "Old price must be a valid number";
+      } else if (parseFloat(formData.old_price) <= 0) {
+        errors.old_price = "Old price must be greater than 0";
+      }
     }
 
-    if (formData.weight && formData.weight.trim() && isNaN(parseFloat(formData.weight))) {
-      errors.weight = "Weight must be a valid number";
+    if (formData.weight && formData.weight.trim()) {
+      if (isNaN(parseFloat(formData.weight))) {
+        errors.weight = "Weight must be a valid number";
+      } else if (parseFloat(formData.weight) <= 0) {
+        errors.weight = "Weight must be greater than 0";
+      }
     }
 
-    if (formData.quantity && formData.quantity.trim() && isNaN(parseInt(formData.quantity))) {
-      errors.quantity = "Quantity must be a valid number";
+    if (formData.quantity && formData.quantity.trim()) {
+      if (isNaN(parseInt(formData.quantity))) {
+        errors.quantity = "Quantity must be a valid number";
+      } else if (parseInt(formData.quantity) <= 0) {
+        errors.quantity = "Quantity must be greater than 0";
+      }
     }
 
     // Set validation errors
@@ -449,6 +476,24 @@ const EditProduct = () => {
     }));
   };
 
+  // Check if images have been changed
+  const haveImagesChanged = (): boolean => {
+    // If the number of images is different, they've changed
+    if (productImages.length !== originalImages.length) {
+      return true;
+    }
+
+    // Check if any image has changed
+    for (let i = 0; i < productImages.length; i++) {
+      if (productImages[i] !== originalImages[i]) {
+        return true;
+      }
+    }
+
+    // No changes detected
+    return false;
+  };
+
   // Handle form submission
   const handleSubmit = async () => {
     // Validate form data
@@ -470,7 +515,7 @@ const EditProduct = () => {
       return;
     }
 
-    try {
+     try {
       // Set loading state
       setLoading(prev => ({ ...prev, submit: true }));
       setIsSubmitting(true);
@@ -482,8 +527,8 @@ const EditProduct = () => {
       // Step 1: Update the product
       const productResponse = await productService.updateProduct(productId, productData);
 
-      // Step 2: Save product images
-      if (productImages.length > 0) {
+      // Step 2: Save product images only if they've changed
+      if (productImages.length > 0 && haveImagesChanged()) {
         const imageData = formatImageData(productId);
         await productService.saveProductImages(imageData);
       }

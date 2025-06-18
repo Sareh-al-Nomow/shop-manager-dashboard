@@ -280,22 +280,40 @@ const CreateProduct = () => {
     if (!formData.sku.trim()) errors.sku = "SKU is required";
     if (!formData.price.trim()) errors.price = "Price is required";
     if (!formData.urlKey.trim()) errors.urlKey = "URL key is required";
+    if (!formData.categoryId || formData.categoryId === "none") errors.categoryId = "Category is required";
+    if (!formData.brandId || formData.brandId === "none") errors.brandId = "Brand is required";
 
     // Numeric fields validation
-    if (formData.price && isNaN(parseFloat(formData.price))) {
-      errors.price = "Price must be a valid number";
+    if (formData.price) {
+      if (isNaN(parseFloat(formData.price))) {
+        errors.price = "Price must be a valid number";
+      } else if (parseFloat(formData.price) <= 0) {
+        errors.price = "Price must be greater than 0";
+      }
     }
 
-    if (formData.old_price && isNaN(parseFloat(formData.old_price))) {
-      errors.old_price = "Old price must be a valid number";
+    if (formData.old_price) {
+      if (isNaN(parseFloat(formData.old_price))) {
+        errors.old_price = "Old price must be a valid number";
+      } else if (parseFloat(formData.old_price) <= 0) {
+        errors.old_price = "Old price must be greater than 0";
+      }
     }
 
-    if (formData.weight && isNaN(parseFloat(formData.weight))) {
-      errors.weight = "Weight must be a valid number";
+    if (formData.weight) {
+      if (isNaN(parseFloat(formData.weight))) {
+        errors.weight = "Weight must be a valid number";
+      } else if (parseFloat(formData.weight) <= 0) {
+        errors.weight = "Weight must be greater than 0";
+      }
     }
 
-    if (formData.quantity && isNaN(parseInt(formData.quantity))) {
-      errors.quantity = "Quantity must be a valid number";
+    if (formData.quantity) {
+      if (isNaN(parseInt(formData.quantity))) {
+        errors.quantity = "Quantity must be a valid number";
+      } else if (parseInt(formData.quantity) <= 0) {
+        errors.quantity = "Quantity must be greater than 0";
+      }
     }
 
     // Set validation errors
