@@ -49,6 +49,7 @@ export interface CategoryParams {
   status?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  lang?: string;
 }
 
 /**
@@ -77,6 +78,7 @@ const categoryService = {
       if (params.status !== undefined) queryParams.append('status', params.status.toString());
       if (params.sortBy !== undefined) queryParams.append('sortBy', params.sortBy);
       if (params.sortOrder !== undefined) queryParams.append('sortOrder', params.sortOrder);
+      if (params.lang !== undefined) queryParams.append('lang', params.lang);
     }
 
     const queryString = queryParams.toString();

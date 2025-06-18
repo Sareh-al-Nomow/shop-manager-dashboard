@@ -150,13 +150,32 @@ export default function Brands() {
       const result = await brandService.getBrands(params);
       setBrandsData(result.data || []);
 
-      // Update pagination metadata if available
-      if (result.meta) {
+      // Update pagination metadata based on the API response format
+      // Check for the format described in the issue description first
+      if (result.total !== undefined && result.page !== undefined && 
+          result.limit !== undefined && result.totalPages !== undefined) {
+        setPaginationMeta({
+          currentPage: result.page,
+          totalPages: result.totalPages,
+          totalItems: result.total,
+          itemsPerPage: result.limit
+        });
+      } 
+      // Fall back to the previous format if available
+      else if (result.meta) {
         setPaginationMeta({
           currentPage: result.meta.currentPage || 1,
           totalPages: result.meta.totalPages || 1,
           totalItems: result.meta.totalItems || 0,
           itemsPerPage: result.meta.itemsPerPage || 10
+        });
+      } else {
+        // Set default pagination metadata if not available in any format
+        setPaginationMeta({
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: result.data?.length || 0,
+          itemsPerPage: filters.limit
         });
       }
     } catch (err) {
@@ -201,8 +220,19 @@ export default function Brands() {
         const result = await brandService.getBrands(params);
         setBrandsData(result.data || []);
 
-        // Update pagination metadata if available
-        if (result.meta) {
+        // Update pagination metadata based on the API response format
+        // Check for the format described in the issue description first
+        if (result.total !== undefined && result.page !== undefined && 
+            result.limit !== undefined && result.totalPages !== undefined) {
+          setPaginationMeta({
+            currentPage: result.page,
+            totalPages: result.totalPages,
+            totalItems: result.total,
+            itemsPerPage: result.limit
+          });
+        } 
+        // Fall back to the previous format if available
+        else if (result.meta) {
           setPaginationMeta({
             currentPage: result.meta.currentPage || 1,
             totalPages: result.meta.totalPages || 1,
@@ -210,7 +240,7 @@ export default function Brands() {
             itemsPerPage: result.meta.itemsPerPage || 10
           });
         } else {
-          // Set default pagination metadata if not available in the response
+          // Set default pagination metadata if not available in any format
           setPaginationMeta({
             currentPage: 1,
             totalPages: 1,

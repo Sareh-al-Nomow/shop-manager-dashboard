@@ -514,9 +514,9 @@ export default function CreateCategory() {
 
       };
 
-      // Handle parent_id (convert 'none' to null or convert to number)
+      // Handle parent_id (convert 'none' to 0 or convert to number)
       if (formData.parent_id === 'none') {
-        apiData.parent_id = '';
+        apiData.parent_id = 0;
       } else if (formData.parent_id) {
         apiData.parent_id = formData.parent_id;
       }

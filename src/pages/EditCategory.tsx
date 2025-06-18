@@ -53,7 +53,7 @@ export default function EditCategory() {
     status: true,
     include_in_nav: true,
     show_products: true,
-    parent_id: null,
+    parent_id: 0,
     position: '1',
     description: {
       name: '',
@@ -71,7 +71,7 @@ export default function EditCategory() {
     status: true,
     include_in_nav: true,
     show_products: true,
-    parent_id: null,
+    parent_id: 0,
     position: '1',
     description: {
       name: '',
@@ -479,7 +479,7 @@ export default function EditCategory() {
   const handleParentChange = (value: string) => {
     setFormData({
       ...formData,
-      parent_id: value === 'none' ? null : parseInt(value)
+      parent_id: value === 'none' ? 0 : parseInt(value)
     });
   };
 
@@ -531,10 +531,10 @@ export default function EditCategory() {
         apiData.show_products = formData.show_products;
       }
 
-      // Handle parent_id (convert 'none' to null or convert to number)
+      // Handle parent_id (convert 'none' to 0 or convert to number)
       if (!isEqual(formData.parent_id, originalFormData.parent_id)) {
         if (formData.parent_id === 'none' || formData.parent_id === null) {
-          apiData.parent_id = '';
+          apiData.parent_id = 0;
         } else if (formData.parent_id) {
           apiData.parent_id = formData.parent_id;
         }

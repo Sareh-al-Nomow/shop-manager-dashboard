@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { categoryService } from "@/services";
+import { categoryService, languageService } from "@/services";
+import { LanguageData } from "@/services/languageService";
 import { useToast } from "@/hooks/use-toast";
 
 interface Category {
@@ -35,6 +36,7 @@ interface FilterParams {
   name: string;
   status: boolean | 'all';
   parentId: string;
+  lang: string;
   sortBy: string;
   sortOrder: 'asc' | 'desc';
 }
@@ -105,6 +107,7 @@ export default function Categories() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [parentCategories, setParentCategories] = useState<{ id: number; name: string }[]>([]);
+  const [availableLanguages, setAvailableLanguages] = useState<LanguageData[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
@@ -123,6 +126,7 @@ export default function Categories() {
     name: '',
     status: 'all',
     parentId: 'all',
+    lang: 'all',
     sortBy: 'id',
     sortOrder: 'desc'
   });
@@ -145,6 +149,7 @@ export default function Categories() {
       name: '',
       status: 'all',
       parentId: 'all',
+      lang: 'all',
       sortBy: 'id',
       sortOrder: 'desc'
     });
@@ -173,6 +178,7 @@ export default function Categories() {
         parentId: filters.parentId === 'null' ? null : 
                  filters.parentId !== 'all' ? parseInt(filters.parentId) : undefined,
         status: filters.status !== 'all' ? filters.status : undefined,
+        lang: filters.lang !== 'all' ? filters.lang : undefined,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder
       };
@@ -180,13 +186,32 @@ export default function Categories() {
       const result = await categoryService.getCategories(params);
       setCategoriesData(result.data || []);
 
-      // Update pagination metadata if available
-      if (result.meta) {
+      // Update pagination metadata based on the API response format
+      // Check for the format described in the issue description first
+      if (result.total !== undefined && result.page !== undefined && 
+          result.limit !== undefined && result.totalPages !== undefined) {
+        setPaginationMeta({
+          currentPage: result.page,
+          totalPages: result.totalPages,
+          totalItems: result.total,
+          itemsPerPage: result.limit
+        });
+      } 
+      // Fall back to the previous format if available
+      else if (result.meta) {
         setPaginationMeta({
           currentPage: result.meta.currentPage || 1,
           totalPages: result.meta.totalPages || 1,
           totalItems: result.meta.totalItems || 0,
           itemsPerPage: result.meta.itemsPerPage || 10
+        });
+      } else {
+        // Set default pagination metadata if not available in any format
+        setPaginationMeta({
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: result.data?.length || 0,
+          itemsPerPage: filters.limit
         });
       }
     } catch (err) {
@@ -213,23 +238,33 @@ export default function Categories() {
     }));
   };
 
-  // Fetch parent categories for filter dropdown
+  // Fetch parent categories and languages for filter dropdowns
   useEffect(() => {
-    const fetchParentCategories = async () => {
+    const fetchFilterData = async () => {
       try {
-        const result = await categoryService.getRootCategories();
-        const { data } = result;
+        // Fetch parent categories
+        const categoriesResult = await categoryService.getRootCategories();
+        const { data } = categoriesResult;
         setParentCategories(data.map((cat: Category) => ({ 
           id: cat.id, 
           name: cat.description.name 
         })));
+
+        // Fetch languages
+        const languagesResult = await languageService.getLanguages();
+        setAvailableLanguages(languagesResult);
       } catch (err) {
-        console.error("Error fetching parent categories:", err);
+        console.error("Error fetching filter data:", err);
+        toast({
+          title: "Error",
+          description: "Failed to load filter data",
+          variant: "destructive"
+        });
       }
     };
 
-    fetchParentCategories();
-  }, []);
+    fetchFilterData();
+  }, [toast]);
 
   // Fetch categories with filters
   useEffect(() => {
@@ -244,6 +279,7 @@ export default function Categories() {
           parentId: filters.parentId === 'null' ? null : 
                    filters.parentId !== 'all' ? parseInt(filters.parentId) : undefined,
           status: filters.status !== 'all' ? filters.status : undefined,
+          lang: filters.lang !== 'all' ? filters.lang : undefined,
           sortBy: filters.sortBy,
           sortOrder: filters.sortOrder
         };
@@ -251,8 +287,19 @@ export default function Categories() {
         const result = await categoryService.getCategories(params);
         setCategoriesData(result.data || []);
 
-        // Update pagination metadata if available
-        if (result.meta) {
+        // Update pagination metadata based on the API response format
+        // Check for the format described in the issue description first
+        if (result.total !== undefined && result.page !== undefined && 
+            result.limit !== undefined && result.totalPages !== undefined) {
+          setPaginationMeta({
+            currentPage: result.page,
+            totalPages: result.totalPages,
+            totalItems: result.total,
+            itemsPerPage: result.limit
+          });
+        } 
+        // Fall back to the previous format if available
+        else if (result.meta) {
           setPaginationMeta({
             currentPage: result.meta.currentPage || 1,
             totalPages: result.meta.totalPages || 1,
@@ -260,7 +307,7 @@ export default function Categories() {
             itemsPerPage: result.meta.itemsPerPage || 10
           });
         } else {
-          // Set default pagination metadata if not available in the response
+          // Set default pagination metadata if not available in any format
           setPaginationMeta({
             currentPage: 1,
             totalPages: 1,
@@ -354,6 +401,26 @@ export default function Categories() {
                 </div>
 
                 <div className="space-y-2">
+                  <label className="text-sm font-medium">Language</label>
+                  <Select 
+                    value={filters.lang} 
+                    onValueChange={(value) => updateFilter('lang', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Languages" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Languages</SelectItem>
+                      {availableLanguages.map((language) => (
+                        <SelectItem key={language.languageCode} value={language.languageCode}>
+                          {language.languageName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <label className="text-sm font-medium">Items per page</label>
                   <Select 
                     value={filters.limit.toString()} 
@@ -385,7 +452,7 @@ export default function Categories() {
         </div>
 
         {/* Active filters display */}
-        {(filters.name || (filters.parentId && filters.parentId !== 'all') || (filters.status && filters.status !== 'all')) && (
+        {(filters.name || (filters.parentId && filters.parentId !== 'all') || (filters.status && filters.status !== 'all') || (filters.lang && filters.lang !== 'all')) && (
           <div className="flex flex-wrap gap-2 items-center">
             <span className="text-sm text-muted-foreground">Active filters:</span>
 
@@ -420,7 +487,17 @@ export default function Categories() {
               </Badge>
             )}
 
-            {(filters.name || (filters.parentId && filters.parentId !== 'all') || filters.status !== 'all') && (
+            {filters.lang !== 'all' && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                Language: {availableLanguages.find(l => l.languageCode === filters.lang)?.languageName || filters.lang}
+                <X 
+                  className="h-3 w-3 cursor-pointer" 
+                  onClick={() => updateFilter('lang', 'all')}
+                />
+              </Badge>
+            )}
+
+            {(filters.name || (filters.parentId && filters.parentId !== 'all') || filters.status !== 'all' || filters.lang !== 'all') && (
               <Button 
                 variant="ghost" 
                 size="sm" 
