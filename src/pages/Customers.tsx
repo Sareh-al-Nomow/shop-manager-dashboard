@@ -20,7 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, Filter, MoreVertical, UserPlus, Edit, Trash2, Mail, Loader2, User } from "lucide-react";
+import { Search, Filter, MoreVertical, UserPlus, Edit, Trash2, Mail, Loader2, User, ChevronLeft, ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { userService, roleService } from "@/services";
@@ -68,7 +68,12 @@ const Customers = () => {
   // Pagination states
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
+  const [paginationMeta, setPaginationMeta] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10
+  });
 
   const statusColors: Record<string, string> = {
     active: "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100",
@@ -111,12 +116,40 @@ const Customers = () => {
 
         const result = await userService.getUsers(params);
 
-        if (result && result.data) {
-          setUsers(result.data);
-          // Calculate total pages if pagination info is available
-          if (result.meta && result.meta.totalPages) {
-            setTotalPages(result.meta.totalPages);
-          }
+        // Check if the response has the new format with pagination at the top level
+        if (Array.isArray(result.data) && result.total !== undefined) {
+          // New API response format
+          setUsers(result.data || []);
+          const currentPage = result.page || 1;
+          setPaginationMeta({
+            currentPage,
+            totalPages: result.totalPages || 1,
+            totalItems: result.total || 0,
+            itemsPerPage: result.limit || 10
+          });
+          setPage(currentPage);
+        } else if (result.meta) {
+          // Old API response format with meta property
+          setUsers(result.data || []);
+          const currentPage = result.meta.currentPage || 1;
+          setPaginationMeta({
+            currentPage,
+            totalPages: result.meta.totalPages || 1,
+            totalItems: result.meta.totalItems || 0,
+            itemsPerPage: result.meta.itemsPerPage || 10
+          });
+          setPage(currentPage);
+        } else {
+          // Fallback if no pagination info is available
+          setUsers(Array.isArray(result) ? result : (result.data || []));
+          const currentPage = 1;
+          setPaginationMeta({
+            currentPage,
+            totalPages: 1,
+            totalItems: Array.isArray(result) ? result.length : (result.data?.length || 0),
+            itemsPerPage: limit
+          });
+          setPage(currentPage);
         }
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -330,30 +363,68 @@ const Customers = () => {
               </Table>
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-4">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setPage(prev => Math.max(prev - 1, 1))}
-                  disabled={page === 1}
-                >
-                  Previous
-                </Button>
-                <span className="text-sm">
-                  Page {page} of {totalPages}
-                </span>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={page === totalPages}
-                >
-                  Next
-                </Button>
+            {/* Pagination controls */}
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-muted-foreground">
+                Showing {users.length > 0 ? (page - 1) * paginationMeta.itemsPerPage + 1 : 0} to {Math.min(page * paginationMeta.itemsPerPage, paginationMeta.totalItems)} of {paginationMeta.totalItems} customers
               </div>
-            )}
+
+              {paginationMeta.totalPages > 1 && (
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(Math.max(1, page - 1))}
+                    disabled={page <= 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="sr-only">Previous Page</span>
+                  </Button>
+
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: Math.min(5, paginationMeta.totalPages) }, (_, i) => {
+                      // Show pages around the current page
+                      let pageNum;
+                      if (paginationMeta.totalPages <= 5) {
+                        // If 5 or fewer pages, show all
+                        pageNum = i + 1;
+                      } else if (page <= 3) {
+                        // If near the start, show first 5 pages
+                        pageNum = i + 1;
+                      } else if (page >= paginationMeta.totalPages - 2) {
+                        // If near the end, show last 5 pages
+                        pageNum = paginationMeta.totalPages - 4 + i;
+                      } else {
+                        // Otherwise show 2 before and 2 after current page
+                        pageNum = page - 2 + i;
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={page === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setPage(pageNum)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(Math.min(paginationMeta.totalPages, page + 1))}
+                    disabled={page >= paginationMeta.totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                    <span className="sr-only">Next Page</span>
+                  </Button>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
