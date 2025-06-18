@@ -63,14 +63,17 @@ const categoryService = {
   getCategories: async (params?: CategoryParams) => {
     const queryParams = new URLSearchParams();
 
+
     if (params) {
       if (params.parentId !== undefined) {
         if (params.parentId === null) {
-          queryParams.append('parentId', 'null');
+           queryParams.append('parentId', 'null');
         } else {
           queryParams.append('parentId', params.parentId.toString());
         }
       }
+
+
       if (params.page !== undefined) queryParams.append('page', params.page.toString());
       if (params.limit !== undefined) queryParams.append('limit', params.limit.toString());
       if (params.search !== undefined) queryParams.append('search', params.search);
@@ -79,7 +82,8 @@ const categoryService = {
       if (params.sortOrder !== undefined) queryParams.append('sortOrder', params.sortOrder);
     }
 
-    const queryString = queryParams.toString();
+    const queryString = queryParams.toString()
+
     const endpoint = queryString ? `/categories?${queryString}` : '/categories';
 
     const response = await api.get(endpoint);

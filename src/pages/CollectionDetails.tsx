@@ -383,7 +383,7 @@ export default function CollectionDetails() {
                   Add Products
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-3xl">
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
                 <DialogHeader>
                   <DialogTitle>Add Products to Collection</DialogTitle>
                   <DialogDescription>
@@ -391,7 +391,7 @@ export default function CollectionDetails() {
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4 my-4">
+                <div className="space-y-4 my-4 flex-1 overflow-y-auto">
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -482,7 +482,7 @@ export default function CollectionDetails() {
 
                   {/* Pagination */}
                   {availableProducts.length > 0 && (
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mt-4">
                       <p className="text-sm text-muted-foreground">
                         {selectedProducts.length} products selected
                       </p>
@@ -511,7 +511,7 @@ export default function CollectionDetails() {
                   )}
                 </div>
 
-                <DialogFooter>
+                <DialogFooter className="mt-2">
                   <Button variant="outline" onClick={() => setShowAddProductDialog(false)}>
                     Cancel
                   </Button>

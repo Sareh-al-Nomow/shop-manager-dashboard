@@ -94,10 +94,14 @@ export default function CreateCategory() {
         const result = await categoryService.getCategories();
         const { data } = result;
 
-        // Extract categories with their names
-        const categories = data.map((cat:any) => ({
+
+        // Filter categories with parent_id equal to null (root categories)
+        const rootCategories = data.filter((cat: any) => cat.parent_id === null);
+
+        // Extract filtered categories with their names
+        const categories = rootCategories.map((cat: any) => ({
           id: cat.id,
-          name: cat.description.name
+          name: cat.description.name,
         }));
 
         setParentCategories(categories);

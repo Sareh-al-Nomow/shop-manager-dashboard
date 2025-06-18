@@ -288,7 +288,7 @@ export default function CreateCollection() {
         }
 
         // Check maximum dimensions (at most 2000x2000 pixels)
-        if (img.width > 2000 || img.height > 2000) {
+        if (img.width > 3000 || img.height > 2000) {
           toast({
             title: "Image Too Large",
             description: "Image dimensions should not exceed 2000x2000 pixels",
