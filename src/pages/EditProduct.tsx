@@ -8,12 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Upload } from "lucide-react";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import {categoryService, brandService, taxClassService, attributeService, productService} from "@/services";
 import { Category } from "@/services/categoryService";
@@ -197,8 +197,82 @@ const EditProduct = () => {
 
         // Set attribute group and values if available
         if (product.attributes && product.attributes.length > 0) {
-          // This would require additional logic to determine the attribute group
-          // and set the selected attribute values
+          // Get the first attribute to find its group
+          const firstAttribute = product.attributes[0];
+          console.log('Product attributes:', product.attributes);
+
+          // Wait for attribute groups to be loaded
+          const checkAttributeGroups = () => {
+            console.log('Checking attribute groups:', attributeGroups);
+            if (attributeGroups.length > 0) {
+              // Find the attribute group that contains this attribute
+              const foundGroup = attributeGroups.find(group => {
+                console.log('Checking group:', group);
+                return group.links?.some(link => {
+                  console.log('Checking link:', link, 'against attribute ID:', firstAttribute.attribute_id);
+                  return link.attribute_id === firstAttribute.attribute_id;
+                });
+              });
+
+              console.log('Found group:', foundGroup);
+
+              if (foundGroup) {
+                // Set the selected attribute group
+                setSelectedAttributeGroupId(foundGroup.attribute_group_id.toString());
+                setSelectedAttributeGroup(foundGroup);
+
+                // Set the selected attribute values
+                const attributeValues: Record<number, string> = {};
+                product.attributes.forEach(attr => {
+                  attributeValues[attr.attribute_id] = attr.option_id.toString();
+                });
+                console.log('Setting attribute values:', attributeValues);
+                setSelectedAttributeValues(attributeValues);
+              } else {
+                // If no group is found, try to create a temporary group with the attributes from the product
+                console.log('No group found, creating temporary group');
+                const tempGroup: AttributeGroup = {
+                  attribute_group_id: 999, // Use a temporary ID
+                  uuid: 'temp',
+                  group_name: 'Product Attributes',
+                  links: product.attributes.map(attr => ({
+                    attribute_group_link_id: 999, // Use a temporary ID
+                    attribute_id: attr.attribute_id,
+                    group_id: 999, // Use a temporary ID
+                    attribute: {
+                      attribute_id: attr.attribute_id,
+                      uuid: attr.attribute.uuid,
+                      attribute_code: attr.attribute.attribute_code,
+                      attribute_name: attr.attribute.attribute_name,
+                      type: attr.attribute.type,
+                      is_required: attr.attribute.is_required,
+                      display_on_frontend: attr.attribute.display_on_frontend,
+                      sort_order: attr.attribute.sort_order,
+                      is_filterable: attr.attribute.is_filterable,
+                      options: [attr.option] // Add the option from the product attribute
+                    }
+                  }))
+                };
+                console.log('Created temporary group:', tempGroup);
+                setSelectedAttributeGroupId(tempGroup.attribute_group_id.toString());
+                setSelectedAttributeGroup(tempGroup);
+
+                // Set the selected attribute values
+                const attributeValues: Record<number, string> = {};
+                product.attributes.forEach(attr => {
+                  attributeValues[attr.attribute_id] = attr.option_id.toString();
+                });
+                console.log('Setting attribute values:', attributeValues);
+                setSelectedAttributeValues(attributeValues);
+              }
+            } else if (!loading.attributeGroups) {
+              // If attribute groups are loaded but none found, try again after a short delay
+              console.log('No attribute groups found, retrying...');
+              setTimeout(checkAttributeGroups, 500);
+            }
+          };
+
+          checkAttributeGroups();
         }
 
         setError(prev => ({ ...prev, product: null }));
@@ -216,7 +290,7 @@ const EditProduct = () => {
     };
 
     fetchProductData();
-  }, [productId, toast]);
+  }, [productId, toast, attributeGroups, loading.attributeGroups]);
 
   // Fetch categories
   useEffect(() => {
@@ -281,6 +355,7 @@ const EditProduct = () => {
       try {
         setLoading(prev => ({ ...prev, attributeGroups: true }));
         const response = await attributeService.getGroups();
+        console.log('Attribute groups response:', response);
         setAttributeGroups(response || []);
         setError(prev => ({ ...prev, attributeGroups: null }));
       } catch (err) {
@@ -768,8 +843,8 @@ const EditProduct = () => {
 
                   <div>
                     <Label htmlFor="categoryId">Category</Label>
-                    <Select 
-                      value={formData.categoryId} 
+                    <Select
+                      value={formData.categoryId}
                       onValueChange={(value) => handleSelectChange('categoryId', value)}
                     >
                       <SelectTrigger className="mt-1">
@@ -797,8 +872,8 @@ const EditProduct = () => {
 
                   <div>
                     <Label htmlFor="brandId">Brand</Label>
-                    <Select 
-                      value={formData.brandId} 
+                    <Select
+                      value={formData.brandId}
                       onValueChange={(value) => handleSelectChange('brandId', value)}
                     >
                       <SelectTrigger className="mt-1">
@@ -830,8 +905,8 @@ const EditProduct = () => {
 
                   <div>
                     <Label htmlFor="taxClassId">Tax class</Label>
-                    <Select 
-                      value={formData.taxClassId} 
+                    <Select
+                      value={formData.taxClassId}
                       onValueChange={(value) => handleSelectChange('taxClassId', value)}
                     >
                       <SelectTrigger className="mt-1">
@@ -899,9 +974,9 @@ const EditProduct = () => {
                       <div className="border rounded-md p-4">
                         <div className="font-medium mb-2">Main Image</div>
                         <div className="relative">
-                          <img 
-                            src={productImages[0]} 
-                            alt="Main Product" 
+                          <img
+                            src={productImages[0]}
+                            alt="Main Product"
                             className="mx-auto max-h-[250px] object-contain"
                           />
                         </div>
@@ -910,23 +985,23 @@ const EditProduct = () => {
                       {/* Image thumbnails and controls */}
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                         {productImages.map((image, index) => (
-                          <div 
-                            key={index} 
+                          <div
+                            key={index}
                             className={`border rounded-md p-2 relative ${index === 0 ? 'ring-2 ring-teal-500' : ''}`}
                           >
                             <div className="aspect-square relative">
-                              <img 
-                                src={image} 
-                                alt={`Product ${index + 1}`} 
+                              <img
+                                src={image}
+                                alt={`Product ${index + 1}`}
                                 className="absolute inset-0 w-full h-full object-contain"
                               />
                             </div>
                             <div className="flex justify-between mt-2">
                               <div className="flex space-x-1">
                                 {/* Move left button */}
-                                <Button 
-                                  variant="outline" 
-                                  size="icon" 
+                                <Button
+                                  variant="outline"
+                                  size="icon"
                                   className="h-7 w-7"
                                   disabled={index === 0}
                                   onClick={() => handleMoveImage(index, index - 1)}
@@ -935,9 +1010,9 @@ const EditProduct = () => {
                                 </Button>
 
                                 {/* Move right button */}
-                                <Button 
-                                  variant="outline" 
-                                  size="icon" 
+                                <Button
+                                  variant="outline"
+                                  size="icon"
                                   className="h-7 w-7"
                                   disabled={index === productImages.length - 1}
                                   onClick={() => handleMoveImage(index, index + 1)}
@@ -947,9 +1022,9 @@ const EditProduct = () => {
                               </div>
 
                               {/* Remove button */}
-                              <Button 
-                                variant="outline" 
-                                size="icon" 
+                              <Button
+                                variant="outline"
+                                size="icon"
                                 className="h-7 w-7 text-red-500 hover:text-red-700"
                                 onClick={() => handleRemoveImage(index)}
                               >
@@ -975,9 +1050,9 @@ const EditProduct = () => {
                             <Button variant="outline" size="sm" className="relative" asChild>
                               <label>
                                 Add image
-                                <input 
-                                  type="file" 
-                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                                <input
+                                  type="file"
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                   onChange={handleImageChange}
                                   accept="image/*"
                                 />
@@ -1002,9 +1077,9 @@ const EditProduct = () => {
                         <Button variant="outline" className="relative" asChild>
                           <label>
                             Add image
-                            <input 
-                              type="file" 
-                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                            <input
+                              type="file"
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                               onChange={handleImageChange}
                               accept="image/*"
                             />
@@ -1235,7 +1310,7 @@ const EditProduct = () => {
                       link.attribute && (
                         <div key={link.attribute_id}>
                           <Label htmlFor={`attribute-${link.attribute_id}`}>{link.attribute.attribute_name}</Label>
-                          <Select 
+                          <Select
                             onValueChange={(value) => handleAttributeValueChange(link.attribute_id, value)}
                             value={selectedAttributeValues[link.attribute_id] || "none"}
                           >
@@ -1243,17 +1318,24 @@ const EditProduct = () => {
                               <SelectValue placeholder="Please select" />
                             </SelectTrigger>
                             <SelectContent>
+                              {console.log('Rendering options for attribute:', link.attribute)}
                               {link.attribute.options && link.attribute.options.length > 0 ? (
-                                link.attribute.options.map((option) => (
-                                  <SelectItem 
-                                    key={option.attribute_option_id} 
-                                    value={option.attribute_option_id.toString()}
-                                  >
-                                    {option.option_text}
-                                  </SelectItem>
-                                ))
+                                link.attribute.options.map((option) => {
+                                  console.log('Rendering option:', option);
+                                  return (
+                                    <SelectItem
+                                      key={option.attribute_option_id}
+                                      value={option.attribute_option_id.toString()}
+                                    >
+                                      {option.option_text}
+                                    </SelectItem>
+                                  );
+                                })
                               ) : (
-                                <SelectItem value="none" disabled>No options available</SelectItem>
+                                <>
+                                  <SelectItem value="none" disabled>No options available</SelectItem>
+                                  {console.log('No options available for attribute:', link.attribute)}
+                                </>
                               )}
                             </SelectContent>
                           </Select>
