@@ -5,10 +5,11 @@ import { useAuth } from "@/context/AuthContext";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requiredPermission?: string;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, user, isLoading } = useAuth();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredPermission }) => {
+  const { isAuthenticated, user, hasPermission, isLoading } = useAuth();
 
   // Show loading state or nothing while checking authentication
   if (isLoading) {
@@ -26,6 +27,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     // You could redirect to a specific page for blocked users
     // or just back to login with a message
     return <Navigate to="/login" replace />;
+  }
+
+  // Check if the user has the required permission
+  if (requiredPermission && !hasPermission(requiredPermission)) {
+    // Redirect to unauthorized page or dashboard
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

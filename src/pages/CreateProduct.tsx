@@ -369,11 +369,29 @@ const CreateProduct = () => {
 
   // Format attribute data for API submission
   const formatAttributeData = (productId: number) => {
-    return Object.entries(selectedAttributeValues).map(([attributeId, optionId]) => ({
-      product_id: productId,
-      attribute_id: parseInt(attributeId),
-      option_id: optionId !== "none" ? parseInt(optionId) : undefined
-    }));
+    return Object.entries(selectedAttributeValues).map(([attributeId, optionId]) => {
+      // Find the attribute in the selected attribute group
+      const attributeIdNum = parseInt(attributeId);
+      const link = selectedAttributeGroup?.links?.find(link => link.attribute_id === attributeIdNum);
+      const attribute = link?.attribute;
+
+      // Find the option in the attribute's options
+      const optionIdNum = optionId !== "none" ? parseInt(optionId) : undefined;
+      const option = attribute?.options?.find(opt => opt.attribute_option_id === optionIdNum);
+
+      // Create the attribute data object
+      const attributeData = {
+        product_id: productId,
+        attribute_id: attributeIdNum,
+        option_id: optionIdNum,
+        attribute_text: attribute?.attribute_name || "",
+        option_text: option?.option_text || "",
+        group_id: parseInt(selectedAttributeGroupId)
+      };
+
+
+      return attributeData;
+    });
   };
 
   // Handle form submission

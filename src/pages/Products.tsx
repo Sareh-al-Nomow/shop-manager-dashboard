@@ -252,7 +252,7 @@ const Products = () => {
         const params = {
           page: filters.page,
           limit: filters.limit,
-          search: filters.name || undefined,
+          name: filters.name || undefined,
           sku: filters.sku || undefined,
           categoryId: filters.categoryId !== 'all' ? parseInt(filters.categoryId) : undefined,
           brandId: filters.brandId !== 'all' ? parseInt(filters.brandId) : undefined,

@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services";
+import { Permission, RolePermission } from "../services/permissionService";
 
 interface User {
   id: number;
@@ -15,9 +16,11 @@ interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   token: string | null;
+  permissions: Permission[];
   login: (email: string, password: string) => Promise<{ success: boolean; errorType?: string }>;
   logout: () => void;
   hasRole: (role: string) => boolean;
+  hasPermission: (permissionName: string) => boolean;
   isLoading: boolean;
 }
 
@@ -27,8 +30,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [permissions, setPermissions] = useState<Permission[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
+
+  // Function to fetch user permissions
+  const fetchUserPermissions = async (roleId: number) => {
+    try {
+      const rolePermissions = await authService.getUserPermissions(roleId);
+      // Extract the permission objects from the role permissions
+      const userPermissions = rolePermissions
+        .filter(rp => rp.permission)
+        .map(rp => rp.permission as Permission);
+
+      setPermissions(userPermissions);
+    } catch (error) {
+      console.error("Error fetching user permissions:", error);
+      setPermissions([]);
+    }
+  };
 
   useEffect(() => {
     // Check if user is authenticated on mount
@@ -36,13 +56,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedUser = localStorage.getItem("user");
 
     if (storedToken && storedUser) {
+      const parsedUser = JSON.parse(storedUser);
       setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+      setUser(parsedUser);
       setIsAuthenticated(true);
-    }
 
-    // Authentication check is complete
-    setIsLoading(false);
+      // Fetch user permissions
+      fetchUserPermissions(parsedUser.role_id).finally(() => {
+        // Authentication check is complete
+        setIsLoading(false);
+      });
+    } else {
+      // Authentication check is complete
+      setIsLoading(false);
+    }
   }, []);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; errorType?: string }> => {
@@ -66,6 +93,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(userData);
       setIsAuthenticated(true);
 
+      // Fetch user permissions
+      await fetchUserPermissions(userData.role_id);
+
       return { success: true };
     } catch (error) {
       console.error("Login error:", error);
@@ -79,6 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem("user");
     setToken(null);
     setUser(null);
+    setPermissions([]);
     setIsAuthenticated(false);
     navigate("/login");
   };
@@ -110,8 +141,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const hasPermission = (permissionName: string): boolean => {
+    // If user is admin, they have all permissions
+    if (user?.role_id === 1) {
+      return true;
+    }
+
+    // Check if the user has the specific permission
+    return permissions.some(permission => permission.name === permissionName && permission.is_active);
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, token, login, logout, hasRole, isLoading }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, token, permissions, login, logout, hasRole, hasPermission, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

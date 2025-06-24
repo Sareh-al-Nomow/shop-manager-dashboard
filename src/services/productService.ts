@@ -6,6 +6,7 @@ export interface ProductAttribute {
   attribute_id: number;
   option_id: number;
   option_text: string;
+  attribute_text: string;
   created_at: string;
   updated_at: string;
   attribute: {
@@ -186,6 +187,60 @@ export interface ProductAttributeData {
   attribute_id: number;
   option_id?: number;
   option_text?: string;
+  attribute_text?: string;
+}
+
+
+export interface VariantGroupCreateData {
+  attribute_group_id: number;
+  attribute_one?: number;
+  attribute_two?: number;
+  attribute_three?: number;
+  attribute_four?: number;
+  attribute_five?: number;
+  visibility?: boolean;
+  product_ids?: number[];
+}
+
+export interface VariantGroup {
+  variant_group_id: number;
+  uuid: string;
+  attribute_group_id: number;
+  attribute_one: number | null;
+  attribute_two: number | null;
+  attribute_three: number | null;
+  attribute_four: number | null;
+  attribute_five: number | null;
+  visibility: boolean;
+  created_at: string;
+  updated_at: string;
+  attribute_group: {
+    attribute_group_id: number;
+    uuid: string;
+    group_name: string;
+    created_at: string;
+    updated_at: string;
+  };
+  products: Product[];
+}
+
+export interface VariantData {
+  product_id: number;
+  sku: string;
+  qty: number;
+  status: boolean;
+  visibility: boolean;
+  images: {
+    origin_image: string;
+    thumb_image?: string | null;
+    listing_image?: string | null;
+    single_image?: string | null;
+    is_main: boolean;
+  }[];
+  attributeValues: {
+    attribute_id: number;
+    option_id: number;
+  }[];
 }
 
 /**
@@ -337,6 +392,87 @@ const productService = {
     return response.data.data && response.data.data.length > 0 
       ? response.data.data[0] 
       : null;
+  },
+
+  /**
+   * Create a variant group for a product
+   * @param variantGroupData Data for creating a variant group
+   * @returns Promise with created variant group data
+   */
+  createVariantGroup: async (variantGroupData: VariantGroupCreateData) => {
+    const response = await api.post('/variant-groups', variantGroupData);
+    return response.data;
+  },
+
+  /**
+   * Add a variant to a variant group
+   * @param variantGroupId Variant group ID
+   * @param variantData Data for creating a variant
+   * @returns Promise with created variant data
+   */
+  createVariant: async (variantGroupId: number, variantData: VariantData) => {
+    const response = await api.post(`/variant-groups/${variantGroupId}/variants`, variantData);
+    return response.data;
+  },
+
+  /**
+   * Get a variant group by ID
+   * @param id Variant group ID
+   * @returns Promise with variant group data
+   */
+  getVariantGroupById: async (id: number): Promise<VariantGroup | null> => {
+    try {
+      const response = await api.get(`/variant-groups/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching variant group:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Upload product images to Hetzner Object Storage
+   * @param productId Product ID
+   * @param images Array of image files
+   * @returns Promise with uploaded image data
+   */
+  uploadProductImages: async (productId: number, images: File[]) => {
+    const formData = new FormData();
+    formData.append('product_image_product_id', productId.toString());
+
+    // Add images to form data
+    images.forEach(image => {
+      formData.append('images', image);
+    });
+
+    const response = await api.post('/products/product-images/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data;
+  },
+
+  /**
+   * Delete a product image by ID
+   * @param id Product image ID
+   * @returns Promise with success message
+   */
+  deleteProductImage: async (id: number) => {
+    const response = await api.delete(`/product-images/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Update a product attribute
+   * @param id Product attribute ID
+   * @param attributeData Product attribute data to update
+   * @returns Promise with updated attribute data
+   */
+  updateProductAttribute: async (id: number, attributeData: Partial<ProductAttributeData>) => {
+    const response = await api.put(`/product-attributes/${id}`, attributeData);
+    return response.data;
   },
 };
 

@@ -35,6 +35,7 @@ import CollectionDetails from "./pages/CollectionDetails";
 import EditCollection from "./pages/EditCollection";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
+import RolesManagement from "./pages/RolesManagement";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 
@@ -78,6 +79,7 @@ const App = () => (
             <Route path="/edit-collection/:id" element={<ProtectedRoute><EditCollection /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/admin/roles" element={<ProtectedRoute><RolesManagement /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

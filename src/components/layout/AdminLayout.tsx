@@ -32,6 +32,7 @@ import {
   BadgePercent,
   Award,
   Star,
+  UserCog,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -114,6 +115,12 @@ const navItems = [
     title: "Analytics",
     icon: BarChart3,
     path: "/analytics",
+    requiredRole: "admin",
+  },
+  {
+    title: "Roles Management",
+    icon: UserCog,
+    path: "/admin/roles",
     requiredRole: "admin",
   },
   {

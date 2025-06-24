@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Upload } from "lucide-react";
+import { ArrowLeft, Upload, Plus, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -28,8 +28,8 @@ const EditProduct = () => {
   const { toast } = useToast();
   const productId = id ? parseInt(id) : 0;
 
-  const [productImages, setProductImages] = useState<string[]>([]);
-  const [originalImages, setOriginalImages] = useState<string[]>([]);
+  const [productImages, setProductImages] = useState<{id: number, url: string}[]>([]);
+  const [originalImages, setOriginalImages] = useState<{id: number, url: string}[]>([]);
   const [imageErrors, setImageErrors] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -38,6 +38,31 @@ const EditProduct = () => {
   const [selectedAttributeGroupId, setSelectedAttributeGroupId] = useState<string | null>(null);
   const [selectedAttributeGroup, setSelectedAttributeGroup] = useState<AttributeGroup | null>(null);
   const [selectedAttributeValues, setSelectedAttributeValues] = useState<Record<number, string>>({});
+  const [originalAttributes, setOriginalAttributes] = useState<Array<{
+    product_attribute_value_index_id: number;
+    product_id: number;
+    attribute_id: number;
+    option_id: number;
+    option_text: string;
+    attribute_text: string;
+  }>>([]);
+
+  // Variant-related state
+  const [hasVariants, setHasVariants] = useState<boolean>(false);
+  const [variantGroupId, setVariantGroupId] = useState<number | null>(null);
+  const [variantGroup, setVariantGroup] = useState<any>(null);
+  const [selectedVariantAttributes, setSelectedVariantAttributes] = useState<number[]>([]);
+  const [isVariantModalOpen, setIsVariantModalOpen] = useState<boolean>(false);
+  const [variantFormData, setVariantFormData] = useState({
+    sku: '',
+    qty: '0',
+    status: true,
+    visibility: true,
+    images: [] as string[],
+    attributeValues: {} as Record<number, string>
+  });
+  const [variantFormErrors, setVariantFormErrors] = useState<Record<string, string>>({});
+  const [isCreatingVariantGroup, setIsCreatingVariantGroup] = useState<boolean>(false);
 
   // Form data state
   const [formData, setFormData] = useState({
@@ -82,7 +107,11 @@ const EditProduct = () => {
     brands: false,
     taxClasses: false,
     attributeGroups: false,
-    submit: false
+    submit: false,
+    deleteImage: false,
+    variantImage: false,
+    image: false,
+    variantGroup: false
   });
 
   const [error, setError] = useState({
@@ -90,7 +119,8 @@ const EditProduct = () => {
     categories: null,
     brands: null,
     taxClasses: null,
-    attributeGroups: null
+    attributeGroups: null,
+    variantGroup: null
   });
 
   // Define the extended Category type with children
@@ -190,13 +220,52 @@ const EditProduct = () => {
 
         // Set product images
         if (product.images && product.images.length > 0) {
-          const images = product.images.map(img => img.origin_image);
+          const images = product.images.map(img => ({
+            id: img.product_image_id,
+            url: img.origin_image
+          }));
           setProductImages(images);
           setOriginalImages(images); // Store original images for comparison
         }
 
+        // Check if product has variants or is part of a variant group
+        if (product.variant_group_id) {
+          setVariantGroupId(product.variant_group_id);
+
+          // Fetch the variant group information
+          try {
+            setLoading(prev => ({ ...prev, variantGroup: true }));
+            setError(prev => ({ ...prev, variantGroup: null }));
+
+            const variantGroupResponse = await productService.getVariantGroupById(product.variant_group_id);
+
+            if (variantGroupResponse) {
+              setVariantGroup(variantGroupResponse);
+              setHasVariants(true);
+            } else {
+              setHasVariants(false);
+              setVariantGroup(null);
+              setError(prev => ({ ...prev, variantGroup: 'Variant group not found' }));
+            }
+          } catch (err) {
+            console.error('Error fetching variant group:', err);
+            setHasVariants(false);
+            setVariantGroup(null);
+            setError(prev => ({ ...prev, variantGroup: 'Failed to load variant group' }));
+          } finally {
+            setLoading(prev => ({ ...prev, variantGroup: false }));
+          }
+        } else {
+          setHasVariants(false);
+          setVariantGroupId(null);
+          setVariantGroup(null);
+        }
+
         // Set attribute group and values if available
         if (product.attributes && product.attributes.length > 0) {
+          // Store original attributes for later comparison
+          setOriginalAttributes(product.attributes);
+
           // Get the first attribute to find its group
           const firstAttribute = product.attributes[0];
           console.log('Product attributes:', product.attributes);
@@ -378,17 +447,45 @@ const EditProduct = () => {
         return;
       }
 
+      setLoading(prev => ({ ...prev, image: true }));
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProductImages(prev => [...prev, reader.result as string]);
+        setProductImages(prev => [...prev, { id: 0, url: reader.result as string }]);
         setImageErrors(null); // Clear any previous errors
+        setLoading(prev => ({ ...prev, image: false }));
       };
       reader.readAsDataURL(file);
     }
   };
 
   // Function to remove an image at a specific index
-  const handleRemoveImage = (index: number) => {
+  const handleRemoveImage = async (index: number) => {
+    const image = productImages[index];
+
+    // If the image has an ID (i.e., it's saved on the server), delete it
+    if (image.id > 0) {
+      try {
+        setLoading(prev => ({ ...prev, deleteImage: true }));
+        await productService.deleteProductImage(image.id);
+        toast({
+          title: "Success",
+          description: "Image deleted successfully",
+          variant: "default"
+        });
+      } catch (error) {
+        console.error("Error deleting image:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete image. Please try again.",
+          variant: "destructive"
+        });
+        return; // Don't remove from state if deletion failed
+      } finally {
+        setLoading(prev => ({ ...prev, deleteImage: false }));
+      }
+    }
+
+    // Remove the image from the state
     setProductImages(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -536,7 +633,7 @@ const EditProduct = () => {
     return {
       product_image_product_id: productId,
       images: productImages.map((image, index) => ({
-        origin_image: image,
+        origin_image: image.url,
         is_main: index === 0
       }))
     };
@@ -544,11 +641,36 @@ const EditProduct = () => {
 
   // Format attribute data for API submission
   const formatAttributeData = (productId: number) => {
-    return Object.entries(selectedAttributeValues).map(([attributeId, optionId]) => ({
-      product_id: productId,
-      attribute_id: parseInt(attributeId),
-      option_id: optionId !== "none" ? parseInt(optionId) : undefined
-    }));
+    return Object.entries(selectedAttributeValues).map(([attributeId, optionId]) => {
+      // Find the attribute in the selected attribute group
+      const attributeIdNum = parseInt(attributeId);
+      const link = selectedAttributeGroup?.links?.find(link => link.attribute_id === attributeIdNum);
+      const attribute = link?.attribute;
+
+      // Find the option in the attribute's options
+      const optionIdNum = optionId !== "none" ? parseInt(optionId) : undefined;
+      const option = attribute?.options?.find(opt => opt.attribute_option_id === optionIdNum);
+
+      // Create the attribute data object
+      const attributeData = {
+        product_id: productId,
+        attribute_id: attributeIdNum,
+        option_id: optionIdNum,
+        attribute_text: attribute?.attribute_name || "",
+        option_text: option?.option_text || "",
+        group_id: parseInt(selectedAttributeGroupId)
+      };
+
+
+      return attributeData;
+    });
+  };
+
+  // Find an existing attribute by attribute_id and option_id
+  const findExistingAttribute = (attributeId: number, optionId: number) => {
+    return originalAttributes.find(attr => 
+      attr.attribute_id === attributeId
+    );
   };
 
   // Check if images have been changed
@@ -560,7 +682,7 @@ const EditProduct = () => {
 
     // Check if any image has changed
     for (let i = 0; i < productImages.length; i++) {
-      if (productImages[i] !== originalImages[i]) {
+      if (productImages[i].id !== originalImages[i].id || productImages[i].url !== originalImages[i].url) {
         return true;
       }
     }
@@ -608,10 +730,23 @@ const EditProduct = () => {
         await productService.saveProductImages(imageData);
       }
 
-      // Step 3: Save product attributes
+      // Step 3: Save or update product attributes
       if (Object.keys(selectedAttributeValues).length > 0) {
         const attributeData = formatAttributeData(productId);
-        await productService.saveProductAttributes(attributeData);
+
+        // Process each attribute individually
+        for (const attribute of attributeData) {
+          // Check if this attribute already exists
+          const existingAttribute = findExistingAttribute(attribute.attribute_id, attribute.option_id);
+
+          if (existingAttribute) {
+            // Update existing attribute
+            await productService.updateProductAttribute(existingAttribute.product_attribute_value_index_id, attribute);
+          } else {
+            // Create new attribute
+            await productService.saveProductAttribute(attribute);
+          }
+        }
       }
 
       // Set success state
@@ -711,6 +846,266 @@ const EditProduct = () => {
         delete newErrors[id];
         return newErrors;
       });
+    }
+  };
+
+  // Handle creating a variant group
+  const handleCreateVariantGroup = async () => {
+    if (selectedVariantAttributes.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select at least one attribute for the variant group.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setLoading(prev => ({ ...prev, submit: true }));
+
+      // Create variant group
+      if (!selectedAttributeGroupId) {
+        toast({
+          title: "Error",
+          description: "Please select an attribute group first.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+
+      // Map selected attributes to attribute_one through attribute_five
+      const attributeFields: { [key: string]: number } = {};
+      selectedVariantAttributes.forEach((attrId, index) => {
+        if (index < 5) {
+          const fieldName = `attribute_${['one', 'two', 'three', 'four', 'five'][index]}`;
+          attributeFields[fieldName] = attrId;
+        }
+      });
+
+      const variantGroupDataCreate = {
+        attribute_group_id: parseInt(selectedAttributeGroupId),
+        ...attributeFields,
+        visibility: true,
+        product_ids: [productId]
+      };
+
+      const response = await productService.createVariantGroup(variantGroupDataCreate);
+
+      // Update state with new variant group ID
+      setVariantGroupId(response.variant_group_id);
+      setHasVariants(true);
+      setIsCreatingVariantGroup(false);
+
+      // Fetch the newly created variant group to update the UI
+      try {
+        setLoading(prev => ({ ...prev, variantGroup: true }));
+        const variantGroupResponse = await productService.getVariantGroupById(response.variant_group_id);
+        if (variantGroupResponse) {
+          setVariantGroup(variantGroupResponse);
+        }
+      } catch (err) {
+        console.error('Error fetching variant group after creation:', err);
+        // Don't show an error toast here as the variant group was created successfully
+      } finally {
+        setLoading(prev => ({ ...prev, variantGroup: false }));
+      }
+
+      toast({
+        title: "Success",
+        description: "Variant group created successfully!",
+        variant: "default"
+      });
+
+    } catch (error) {
+      console.error("Error creating variant group:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create variant group. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, submit: false }));
+    }
+  };
+
+  // Handle variant image change
+  const handleVariantImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check if we've reached the maximum number of images
+      if (variantFormData.images.length >= 5) {
+        setVariantFormErrors(prev => ({
+          ...prev,
+          images: "Maximum of 5 images allowed"
+        }));
+        return;
+      }
+
+      setLoading(prev => ({ ...prev, variantImage: true }));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setVariantFormData(prev => ({
+          ...prev,
+          images: [...prev.images, reader.result as string]
+        }));
+        // Clear any previous errors
+        setVariantFormErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.images;
+          return newErrors;
+        });
+        setLoading(prev => ({ ...prev, variantImage: false }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle removing a variant image
+  const handleRemoveVariantImage = (index: number) => {
+    setVariantFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Handle variant attribute value change
+  const handleVariantAttributeValueChange = (attributeId: number, value: string) => {
+    setVariantFormData(prev => ({
+      ...prev,
+      attributeValues: {
+        ...prev.attributeValues,
+        [attributeId]: value
+      }
+    }));
+  };
+
+  // Validate variant form
+  const validateVariantForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    // Required fields validation
+    if (!variantFormData.sku.trim()) errors.sku = "SKU is required";
+    if (!variantFormData.qty.trim() || parseInt(variantFormData.qty) < 0) errors.qty = "Quantity must be a valid number";
+    if (variantFormData.images.length === 0) errors.images = "At least one image is required";
+
+    // Check if all variant attributes have values
+    if (selectedVariantAttributes.length > 0) {
+      for (const attrId of selectedVariantAttributes) {
+        if (!variantFormData.attributeValues[attrId]) {
+          errors.attributes = "All variant attributes must have values";
+          break;
+        }
+      }
+    }
+
+    setVariantFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Handle creating a variant
+  const handleCreateVariant = async () => {
+    if (!validateVariantForm()) {
+      toast({
+        title: "Error",
+        description: "Please fix the errors in the form.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setLoading(prev => ({ ...prev, submit: true }));
+
+      // Format attribute values for API
+      const attributeValues = Object.entries(variantFormData.attributeValues).map(([attributeId, optionId]) => ({
+        attribute_id: parseInt(attributeId),
+        option_id: parseInt(optionId)
+      }));
+
+      // First, save the images using saveProductImages
+      const imageData = {
+        product_image_product_id: productId,
+        images: variantFormData.images.map((image, index) => ({
+          origin_image: image,
+          is_main: index === 0
+        }))
+      };
+
+      // Save images and get the response
+      const imageResponse = await productService.saveProductImages(imageData);
+
+      // Extract the origin_image URLs from the response
+      // The response format is expected to be an array of image objects
+      const uploadedImages = Array.isArray(imageResponse) ? imageResponse : [];
+
+      // If no images were uploaded, show an error
+      if (uploadedImages.length === 0) {
+        throw new Error("Failed to upload images");
+      }
+
+      // Create variant data with the uploaded image URLs
+      const variantData = {
+        product_id: productId,
+        sku: variantFormData.sku,
+        qty: parseInt(variantFormData.qty),
+        status: variantFormData.status,
+        visibility: variantFormData.visibility,
+        images: uploadedImages.map((img: any, index: number) => ({
+          origin_image: img.origin_image,
+          thumb_image: img.thumb_image || "null",
+          listing_image: img.listing_image || "null",
+          single_image: img.single_image || "null",
+          is_main: index === 0
+        })),
+        attributeValues
+      };
+
+      // Create variant
+      await productService.createVariant(variantGroupId!, variantData);
+
+      // Reset form and close modal
+      setVariantFormData({
+        sku: '',
+        qty: '0',
+        status: true,
+        visibility: true,
+        images: [],
+        attributeValues: {}
+      });
+      setIsVariantModalOpen(false);
+
+      // Refresh the variant group data to show the new variant
+      try {
+        setLoading(prev => ({ ...prev, variantGroup: true }));
+        if (variantGroupId) {
+          const updatedVariantGroup = await productService.getVariantGroupById(variantGroupId);
+          if (updatedVariantGroup) {
+            setVariantGroup(updatedVariantGroup);
+          }
+        }
+      } catch (err) {
+        console.error('Error refreshing variant group data:', err);
+        // Don't show an error toast here as the variant was created successfully
+      } finally {
+        setLoading(prev => ({ ...prev, variantGroup: false }));
+      }
+
+      toast({
+        title: "Success",
+        description: "Variant created successfully!",
+        variant: "default"
+      });
+
+    } catch (error) {
+      console.error("Error creating variant:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create variant. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, submit: false }));
     }
   };
 
@@ -975,7 +1370,7 @@ const EditProduct = () => {
                         <div className="font-medium mb-2">Main Image</div>
                         <div className="relative">
                           <img
-                            src={productImages[0]}
+                            src={productImages[0].url}
                             alt="Main Product"
                             className="mx-auto max-h-[250px] object-contain"
                           />
@@ -991,7 +1386,7 @@ const EditProduct = () => {
                           >
                             <div className="aspect-square relative">
                               <img
-                                src={image}
+                                src={image.url}
                                 alt={`Product ${index + 1}`}
                                 className="absolute inset-0 w-full h-full object-contain"
                               />
@@ -1027,10 +1422,18 @@ const EditProduct = () => {
                                 size="icon"
                                 className="h-7 w-7 text-red-500 hover:text-red-700"
                                 onClick={() => handleRemoveImage(index)}
+                                disabled={loading.deleteImage}
                               >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                                  <path d="M18 6L6 18M6 6l12 12"></path>
-                                </svg>
+                                {loading.deleteImage ? (
+                                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                ) : (
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                                    <path d="M18 6L6 18M6 6l12 12"></path>
+                                  </svg>
+                                )}
                               </Button>
                             </div>
                             {index === 0 && (
@@ -1047,14 +1450,29 @@ const EditProduct = () => {
                             <div className="text-teal-500 mb-2">
                               <Upload className="h-6 w-6" />
                             </div>
-                            <Button variant="outline" size="sm" className="relative" asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="relative" 
+                              asChild
+                              disabled={loading.image}
+                            >
                               <label>
-                                Add image
+                                {loading.image ? (
+                                  <div className="flex items-center">
+                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Loading...
+                                  </div>
+                                ) : "Add image"}
                                 <input
                                   type="file"
                                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                   onChange={handleImageChange}
                                   accept="image/*"
+                                  disabled={loading.image}
                                 />
                               </label>
                             </Button>
@@ -1074,14 +1492,28 @@ const EditProduct = () => {
                         <p className="text-sm text-muted-foreground mb-4">
                           Upload at least 2 product images. The first image will be the main product image.
                         </p>
-                        <Button variant="outline" className="relative" asChild>
+                        <Button 
+                          variant="outline" 
+                          className="relative" 
+                          asChild
+                          disabled={loading.image}
+                        >
                           <label>
-                            Add image
+                            {loading.image ? (
+                              <div className="flex items-center">
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Loading...
+                              </div>
+                            ) : "Add image"}
                             <input
                               type="file"
                               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                               onChange={handleImageChange}
                               accept="image/*"
+                              disabled={loading.image}
                             />
                           </label>
                         </Button>
@@ -1149,6 +1581,233 @@ const EditProduct = () => {
                       <p className="text-sm text-red-500 mt-1">{formErrors.metaDescription}</p>
                     )}
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Variants Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="uppercase text-sm font-semibold">Variants</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {loading.variantGroup ? (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                        <span className="ml-2">Loading variant group...</span>
+                      </div>
+                  ) : error.variantGroup ? (
+                      <div className="text-center py-4">
+                        <p className="text-red-500 mb-2">{error.variantGroup}</p>
+                        <p className="text-sm text-muted-foreground">
+                          You can create a new variant group for this product.
+                        </p>
+                        <Button
+                            onClick={() => setIsCreatingVariantGroup(true)}
+                            className="bg-teal-600 hover:bg-teal-700 mt-4"
+                        >
+                          Create Variant Group
+                        </Button>
+                      </div>
+                  ) : hasVariants && variantGroup ? (
+                      <div>
+                        <div className="flex justify-between items-center mb-4">
+                          <p className="text-sm text-muted-foreground">
+                            This product is part of a variant group. You can add new variants to this group.
+                          </p>
+                          <Button
+                              onClick={() => {
+                                // Set selectedVariantAttributes based on the variant group's attributes
+                                const variantAttributes = [];
+                                if (variantGroup.attribute_one) variantAttributes.push(variantGroup.attribute_one);
+                                if (variantGroup.attribute_two) variantAttributes.push(variantGroup.attribute_two);
+                                if (variantGroup.attribute_three) variantAttributes.push(variantGroup.attribute_three);
+                                if (variantGroup.attribute_four) variantAttributes.push(variantGroup.attribute_four);
+                                if (variantGroup.attribute_five) variantAttributes.push(variantGroup.attribute_five);
+                                setSelectedVariantAttributes(variantAttributes);
+                                setIsVariantModalOpen(true);
+                              }}
+                              className="bg-teal-600 hover:bg-teal-700"
+                          >
+                            Add Variant
+                          </Button>
+                        </div>
+
+                        {/* Variants Table */}
+                        {variantGroup.products && variantGroup.products.length > 0 ? (
+                            <div className="border rounded-md overflow-hidden">
+                              <table className="w-full">
+                                <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                  {/* Attribute columns */}
+                                  {variantGroup.attribute_one && (
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        {variantGroup.products[0]?.attributes?.find(attr => attr.attribute_id === variantGroup.attribute_one)?.attribute_text || 'Attribute 1'}
+                                      </th>
+                                  )}
+                                  {variantGroup.attribute_two && (
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        {variantGroup.products[0]?.attributes?.find(attr => attr.attribute_id === variantGroup.attribute_two)?.attribute_text || 'Attribute 2'}
+                                      </th>
+                                  )}
+                                  {variantGroup.attribute_three && (
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        {variantGroup.products[0]?.attributes?.find(attr => attr.attribute_id === variantGroup.attribute_three)?.attribute_text || 'Attribute 3'}
+                                      </th>
+                                  )}
+                                  {variantGroup.attribute_four && (
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        {variantGroup.products[0]?.attributes?.find(attr => attr.attribute_id === variantGroup.attribute_four)?.attribute_text || 'Attribute 4'}
+                                      </th>
+                                  )}
+                                  {variantGroup.attribute_five && (
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        {variantGroup.products[0]?.attributes?.find(attr => attr.attribute_id === variantGroup.attribute_five)?.attribute_text || 'Attribute 5'}
+                                      </th>
+                                  )}
+                                </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                {variantGroup.products.map(product => (
+                                    <tr 
+                                      key={product.product_id} 
+                                      className="hover:bg-gray-50 cursor-pointer"
+                                      onClick={() => navigate(`/product/${product.product_id}`)}
+                                    >
+                                      <td className="px-4 py-2 whitespace-nowrap">
+                                        <div className="flex items-center">
+                                          {product.images && product.images.length > 0 ? (
+                                              <img
+                                                  src={product.images.find(img => img.is_main)?.origin_image || product.images[0].origin_image}
+                                                  alt={product.description?.name || 'Product'}
+                                                  className="h-10 w-10 object-cover rounded-md mr-2"
+                                              />
+                                          ) : (
+                                              <div className="h-10 w-10 bg-gray-200 rounded-md mr-2 flex items-center justify-center text-gray-500">
+                                                No img
+                                              </div>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{product.sku}</td>
+                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${product.price}</td>
+                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{product.inventory?.qty || 0}</td>
+                                      <td className="px-4 py-2 whitespace-nowrap">
+                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                      {product.status ? 'Enabled' : 'Disabled'}
+                                    </span>
+                                      </td>
+                                      {/* Attribute values */}
+                                      {variantGroup.attribute_one && (
+                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                            {product.attributes?.find(attr => attr.attribute_id === variantGroup.attribute_one)?.option_text || '-'}
+                                          </td>
+                                      )}
+                                      {variantGroup.attribute_two && (
+                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                            {product.attributes?.find(attr => attr.attribute_id === variantGroup.attribute_two)?.option_text || '-'}
+                                          </td>
+                                      )}
+                                      {variantGroup.attribute_three && (
+                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                            {product.attributes?.find(attr => attr.attribute_id === variantGroup.attribute_three)?.option_text || '-'}
+                                          </td>
+                                      )}
+                                      {variantGroup.attribute_four && (
+                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                            {product.attributes?.find(attr => attr.attribute_id === variantGroup.attribute_four)?.option_text || '-'}
+                                          </td>
+                                      )}
+                                      {variantGroup.attribute_five && (
+                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                            {product.attributes?.find(attr => attr.attribute_id === variantGroup.attribute_five)?.option_text || '-'}
+                                          </td>
+                                      )}
+                                    </tr>
+                                ))}
+                                </tbody>
+                              </table>
+                            </div>
+                        ) : (
+                            <p className="text-center py-4 text-gray-500">No variants found for this product.</p>
+                        )}
+                      </div>
+                  ) : (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          This product has no variants. You can create a variant group with attributes like color or size.
+                        </p>
+                        <Button
+                            onClick={() => setIsCreatingVariantGroup(true)}
+                            className="bg-teal-600 hover:bg-teal-700"
+                        >
+                          Create Variant Group
+                        </Button>
+
+                        {isCreatingVariantGroup && (
+                            <div className="mt-4 border rounded-md p-4">
+                              <h3 className="font-medium mb-2">Select Attributes for Variants</h3>
+                              <p className="text-sm text-muted-foreground mb-4">
+                                Select attributes from the current attribute group to use for creating variants.
+                              </p>
+
+                              {selectedAttributeGroup && selectedAttributeGroup.links && selectedAttributeGroup.links.length > 0 ? (
+                                  <div className="space-y-4">
+                                    {selectedAttributeGroup.links.map((link) => (
+                                        link.attribute && (
+                                            <div key={link.attribute_id} className="flex items-center space-x-2">
+                                              <input
+                                                  type="checkbox"
+                                                  id={`variant-attr-${link.attribute_id}`}
+                                                  checked={selectedVariantAttributes.includes(link.attribute_id)}
+                                                  onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                      setSelectedVariantAttributes(prev => [...prev, link.attribute_id]);
+                                                    } else {
+                                                      setSelectedVariantAttributes(prev => prev.filter(id => id !== link.attribute_id));
+                                                    }
+                                                  }}
+                                                  className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                                              />
+                                              <Label htmlFor={`variant-attr-${link.attribute_id}`}>
+                                                {link.attribute.attribute_name}
+                                              </Label>
+                                            </div>
+                                        )
+                                    ))}
+
+                                    <div className="flex justify-end space-x-2 mt-4">
+                                      <Button
+                                          variant="outline"
+                                          onClick={() => {
+                                            setIsCreatingVariantGroup(false);
+                                            setSelectedVariantAttributes([]);
+                                          }}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                          onClick={handleCreateVariantGroup}
+                                          className="bg-teal-600 hover:bg-teal-700"
+                                          disabled={selectedVariantAttributes.length === 0}
+                                      >
+                                        Create
+                                      </Button>
+                                    </div>
+                                  </div>
+                              ) : (
+                                  <p className="text-sm text-amber-600">
+                                    Please select an attribute group with attributes first.
+                                  </p>
+                              )}
+                            </div>
+                        )}
+                      </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -1345,6 +2004,8 @@ const EditProduct = () => {
                   </CardContent>
                 </Card>
               )}
+
+
             </div>
           </div>
         )}
@@ -1384,6 +2045,237 @@ const EditProduct = () => {
           </div>
         )}
       </div>
+
+      {/* Variant Modal */}
+      {isVariantModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Add New Variant</h2>
+                <button 
+                  onClick={() => setIsVariantModalOpen(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6L6 18M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <div>
+                  <h3 className="font-medium mb-2">Basic Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="variant-sku">SKU</Label>
+                      <Input
+                        id="variant-sku"
+                        placeholder="SKU"
+                        value={variantFormData.sku}
+                        onChange={(e) => setVariantFormData(prev => ({ ...prev, sku: e.target.value }))}
+                        className="mt-1"
+                      />
+                      {variantFormErrors.sku && (
+                        <p className="text-sm text-red-500 mt-1">{variantFormErrors.sku}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="variant-qty">Quantity</Label>
+                      <Input
+                        id="variant-qty"
+                        type="number"
+                        placeholder="Quantity"
+                        value={variantFormData.qty}
+                        onChange={(e) => setVariantFormData(prev => ({ ...prev, qty: e.target.value }))}
+                        className="mt-1"
+                        min="0"
+                      />
+                      {variantFormErrors.qty && (
+                        <p className="text-sm text-red-500 mt-1">{variantFormErrors.qty}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <p className="mb-2">Status</p>
+                      <RadioGroup
+                        value={variantFormData.status ? "enabled" : "disabled"}
+                        onValueChange={(value) => setVariantFormData(prev => ({ ...prev, status: value === "enabled" }))}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="disabled" id="variant-disabled" />
+                          <Label htmlFor="variant-disabled">Disabled</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="enabled" id="variant-enabled" />
+                          <Label htmlFor="variant-enabled">Enabled</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    <div>
+                      <p className="mb-2">Visibility</p>
+                      <RadioGroup
+                        value={variantFormData.visibility ? "visible" : "not-visible"}
+                        onValueChange={(value) => setVariantFormData(prev => ({ ...prev, visibility: value === "visible" }))}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="not-visible" id="variant-not-visible" />
+                          <Label htmlFor="variant-not-visible">Not visible</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="visible" id="variant-visible" />
+                          <Label htmlFor="variant-visible">Visible</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Variant Attributes */}
+                {selectedVariantAttributes.length > 0 && (
+                  <div>
+                    <h3 className="font-medium mb-2">Variant Attributes</h3>
+                    <div className="space-y-4">
+                      {selectedVariantAttributes.map(attributeId => {
+                        const attribute = selectedAttributeGroup?.links?.find(link => link.attribute_id === attributeId)?.attribute;
+                        return attribute ? (
+                          <div key={attributeId}>
+                            <Label htmlFor={`variant-attr-${attributeId}`}>{attribute.attribute_name}</Label>
+                            <Select
+                              onValueChange={(value) => handleVariantAttributeValueChange(attributeId, value)}
+                              value={variantFormData.attributeValues[attributeId] || ""}
+                            >
+                              <SelectTrigger className="mt-1">
+                                <SelectValue placeholder="Select option" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {attribute.options && attribute.options.length > 0 ? (
+                                  attribute.options.map((option) => (
+                                    <SelectItem
+                                      key={option.attribute_option_id}
+                                      value={option.attribute_option_id.toString()}
+                                    >
+                                      {option.option_text}
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  <SelectItem value="" disabled>No options available</SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ) : null;
+                      })}
+                      {variantFormErrors.attributes && (
+                        <p className="text-sm text-red-500">{variantFormErrors.attributes}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Variant Images */}
+                <div>
+                  <h3 className="font-medium mb-2">Images</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Add at least one image for the variant. The first image will be the main image.
+                  </p>
+
+                  {variantFormErrors.images && (
+                    <p className="text-sm text-red-500 mb-2">{variantFormErrors.images}</p>
+                  )}
+
+                  {/* Image thumbnails */}
+                  {variantFormData.images.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-4">
+                      {variantFormData.images.map((image, index) => (
+                        <div
+                          key={index}
+                          className={`border rounded-md p-2 relative ${index === 0 ? 'ring-2 ring-teal-500' : ''}`}
+                        >
+                          <div className="aspect-square relative">
+                            <img
+                              src={image}
+                              alt={`Variant ${index + 1}`}
+                              className="absolute inset-0 w-full h-full object-contain"
+                            />
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="absolute top-1 right-1 h-6 w-6 text-red-500 hover:text-red-700 bg-white"
+                            onClick={() => handleRemoveVariantImage(index)}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                              <path d="M18 6L6 18M6 6l12 12"></path>
+                            </svg>
+                          </Button>
+                          {index === 0 && (
+                            <div className="absolute top-0 left-0 bg-teal-500 text-white text-xs px-1.5 py-0.5 rounded-br-md">
+                              Main
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Add image button */}
+                  <Button variant="outline" className="relative" asChild>
+                    <label>
+                      Add image
+                      <input
+                        type="file"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        onChange={handleVariantImageChange}
+                        accept="image/*"
+                      />
+                    </label>
+                  </Button>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-2 mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsVariantModalOpen(false);
+                      setVariantFormData({
+                        sku: '',
+                        qty: '0',
+                        status: true,
+                        visibility: true,
+                        images: [],
+                        attributeValues: {}
+                      });
+                      setVariantFormErrors({});
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleCreateVariant}
+                    className="bg-teal-600 hover:bg-teal-700"
+                    disabled={loading.submit}
+                  >
+                    {loading.submit ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Creating...
+                      </>
+                    ) : "Create Variant"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 };

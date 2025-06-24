@@ -451,14 +451,14 @@ export default function ProductDetails() {
                         {product.attributes.map((attr) => (
                           <TableRow key={attr.product_attribute_value_index_id}>
                             <TableCell>
-                              <div className="font-medium">{attr.attribute.attribute_name}</div>
-                              <div className="text-xs text-muted-foreground">{attr.attribute.attribute_code}</div>
+                              <div className="font-medium">{attr.attribute_text}</div>
+                              {/*<div className="text-xs text-muted-foreground">{attr.attribute.attribute_code}</div>*/}
                             </TableCell>
-                            <TableCell>{attr.option.option_text}</TableCell>
+                            <TableCell>{attr.option_text}</TableCell>
                             <TableCell>
-                              <Badge variant="outline">
-                                {attr.attribute.type}
-                              </Badge>
+                              {/*<Badge variant="outline">*/}
+                              {/*  {attr.attribute.type}*/}
+                              {/*</Badge>*/}
                             </TableCell>
                           </TableRow>
                         ))}
