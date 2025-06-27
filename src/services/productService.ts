@@ -1,4 +1,15 @@
-import api from './api';
+import api, { 
+  PRODUCTS_ENDPOINT, 
+  PRODUCT_BY_ID_ENDPOINT, 
+  PRODUCT_IMAGES_ENDPOINT, 
+  PRODUCT_IMAGE_BY_ID_ENDPOINT, 
+  PRODUCT_ATTRIBUTES_ENDPOINT, 
+  PRODUCT_ATTRIBUTE_BY_ID_ENDPOINT, 
+  PRODUCT_UPLOAD_IMAGES_ENDPOINT,
+  VARIANT_GROUPS_ENDPOINT,
+  VARIANT_GROUP_BY_ID_ENDPOINT,
+  VARIANT_GROUP_VARIANTS_ENDPOINT
+} from './api';
 
 export interface ProductAttribute {
   product_attribute_value_index_id: number;
@@ -269,7 +280,7 @@ const productService = {
     }
 
     const queryString = queryParams.toString();
-    const endpoint = queryString ? `/products?${queryString}` : '/products';
+    const endpoint = queryString ? `${PRODUCTS_ENDPOINT}?${queryString}` : PRODUCTS_ENDPOINT;
 
     const response = await api.get(endpoint);
     return response.data;
@@ -281,7 +292,7 @@ const productService = {
    * @returns Promise with product data
    */
   getProductById: async (id: number) => {
-    const response = await api.get(`/products/${id}`);
+    const response = await api.get(PRODUCT_BY_ID_ENDPOINT(id));
     // The API now returns { data: [product], total, page, limit, totalPages }
     // We extract the first product from the data array
     return response.data.data && response.data.data.length > 0 
@@ -295,7 +306,7 @@ const productService = {
    * @returns Promise with created product data
    */
   createProduct: async (productData: ProductCreateData) => {
-    const response = await api.post('/products', productData);
+    const response = await api.post(PRODUCTS_ENDPOINT, productData);
     return response.data;
   },
 
@@ -345,7 +356,7 @@ const productService = {
       }
     });
 
-    const response = await api.post('/product-images', formData, {
+    const response = await api.post(PRODUCT_IMAGES_ENDPOINT, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -360,7 +371,7 @@ const productService = {
    * @returns Promise with saved attribute data
    */
   saveProductAttribute: async (attributeData: ProductAttributeData) => {
-    const response = await api.post('/product-attributes', attributeData);
+    const response = await api.post(PRODUCT_ATTRIBUTES_ENDPOINT, attributeData);
     return response.data;
   },
 
@@ -371,7 +382,7 @@ const productService = {
    */
   saveProductAttributes: async (attributesData: ProductAttributeData[]) => {
     const promises = attributesData.map(data => 
-      api.post('/product-attributes', data)
+      api.post(PRODUCT_ATTRIBUTES_ENDPOINT, data)
     );
     return Promise.all(promises);
   },
@@ -386,7 +397,7 @@ const productService = {
    * @returns Promise with updated product data
    */
   updateProduct: async (id: number, productData: ProductCreateData) => {
-    const response = await api.put(`/products/${id}`, productData);
+    const response = await api.put(PRODUCT_BY_ID_ENDPOINT(id), productData);
     // The API returns { data: [product], total, page, limit, totalPages }
     // We extract the first product from the data array
     return response.data.data && response.data.data.length > 0 
@@ -400,7 +411,7 @@ const productService = {
    * @returns Promise with created variant group data
    */
   createVariantGroup: async (variantGroupData: VariantGroupCreateData) => {
-    const response = await api.post('/variant-groups', variantGroupData);
+    const response = await api.post(VARIANT_GROUPS_ENDPOINT, variantGroupData);
     return response.data;
   },
 
@@ -411,7 +422,7 @@ const productService = {
    * @returns Promise with created variant data
    */
   createVariant: async (variantGroupId: number, variantData: VariantData) => {
-    const response = await api.post(`/variant-groups/${variantGroupId}/variants`, variantData);
+    const response = await api.post(VARIANT_GROUP_VARIANTS_ENDPOINT(variantGroupId), variantData);
     return response.data;
   },
 
@@ -422,7 +433,7 @@ const productService = {
    */
   getVariantGroupById: async (id: number): Promise<VariantGroup | null> => {
     try {
-      const response = await api.get(`/variant-groups/${id}`);
+      const response = await api.get(VARIANT_GROUP_BY_ID_ENDPOINT(id));
       return response.data;
     } catch (error) {
       console.error('Error fetching variant group:', error);
@@ -445,7 +456,7 @@ const productService = {
       formData.append('images', image);
     });
 
-    const response = await api.post('/products/product-images/', formData, {
+    const response = await api.post(PRODUCT_UPLOAD_IMAGES_ENDPOINT, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -460,7 +471,7 @@ const productService = {
    * @returns Promise with success message
    */
   deleteProductImage: async (id: number) => {
-    const response = await api.delete(`/product-images/${id}`);
+    const response = await api.delete(PRODUCT_IMAGE_BY_ID_ENDPOINT(id));
     return response.data;
   },
 
@@ -471,7 +482,7 @@ const productService = {
    * @returns Promise with updated attribute data
    */
   updateProductAttribute: async (id: number, attributeData: Partial<ProductAttributeData>) => {
-    const response = await api.put(`/product-attributes/${id}`, attributeData);
+    const response = await api.put(PRODUCT_ATTRIBUTE_BY_ID_ENDPOINT(id), attributeData);
     return response.data;
   },
 };

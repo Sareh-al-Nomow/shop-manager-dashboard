@@ -1,4 +1,4 @@
-import api from './api';
+import api, { CATEGORY_UPLOAD_IMAGE_ENDPOINT, BRAND_UPLOAD_IMAGE_ENDPOINT } from './api';
 
 /**
  * Image service for handling image upload API calls
@@ -15,7 +15,7 @@ const imageService = {
     formData.append('image', imageFile);
 
     // Use multipart/form-data for file uploads
-    const response = await api.post('/categories/upload-image', formData, {
+    const response = await api.post(CATEGORY_UPLOAD_IMAGE_ENDPOINT, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -36,7 +36,7 @@ const imageService = {
     formData.append('image', logoFile);
 
     // Use multipart/form-data for file uploads
-    const response = await api.post('/brands/upload-image', formData, {
+    const response = await api.post(BRAND_UPLOAD_IMAGE_ENDPOINT, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

@@ -1,4 +1,4 @@
-import api from './api';
+import api, { ROLES_ENDPOINT, ROLE_BY_ID_ENDPOINT } from './api';
 
 export interface Role {
   id: number;
@@ -28,7 +28,7 @@ const roleService = {
    * @returns Promise with roles data
    */
   getRoles: async () => {
-    const response = await api.get('/roles');
+    const response = await api.get(ROLES_ENDPOINT);
     return response.data;
   },
 
@@ -38,7 +38,7 @@ const roleService = {
    * @returns Promise with role data
    */
   getRoleById: async (id: number) => {
-    const response = await api.get(`/roles/${id}`);
+    const response = await api.get(ROLE_BY_ID_ENDPOINT(id));
     return response.data;
   },
 
@@ -48,7 +48,7 @@ const roleService = {
    * @returns Promise with created role data
    */
   createRole: async (roleData: RoleCreateData) => {
-    const response = await api.post('/roles', roleData);
+    const response = await api.post(ROLES_ENDPOINT, roleData);
     return response.data;
   },
 
@@ -59,7 +59,7 @@ const roleService = {
    * @returns Promise with updated role data
    */
   updateRole: async (id: number, roleData: RoleUpdateData) => {
-    const response = await api.put(`/roles/${id}`, roleData);
+    const response = await api.put(ROLE_BY_ID_ENDPOINT(id), roleData);
     return response.data;
   },
 
@@ -69,7 +69,7 @@ const roleService = {
    * @returns Promise with deletion result
    */
   deleteRole: async (id: number) => {
-    const response = await api.delete(`/roles/${id}`);
+    const response = await api.delete(ROLE_BY_ID_ENDPOINT(id));
     return response.data;
   }
 };

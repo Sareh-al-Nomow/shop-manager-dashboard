@@ -1,4 +1,4 @@
-import api from './api';
+import api, { GROUPS_ENDPOINT, GROUP_BY_ID_ENDPOINT } from './api';
 
 export interface Group {
     id: number;
@@ -26,7 +26,7 @@ const groupService = {
      * @returns Promise with user groups data as an array
      */
     getAll: async (): Promise<Group[]> => {
-        const response = await api.get('/groups');
+        const response = await api.get(GROUPS_ENDPOINT);
         return response.data;
     },
 
@@ -36,7 +36,7 @@ const groupService = {
      * @returns Promise with user group data
      */
     getById: async (id: number): Promise<Group> => {
-        const response = await api.get(`/groups/${id}`);
+        const response = await api.get(GROUP_BY_ID_ENDPOINT(id));
         return response.data;
     }
 };

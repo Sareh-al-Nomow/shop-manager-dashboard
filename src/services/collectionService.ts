@@ -1,4 +1,13 @@
-import api from './api';
+import api, { 
+  COLLECTIONS_ENDPOINT, 
+  COLLECTION_BY_ID_ENDPOINT, 
+  COLLECTION_UPLOAD_IMAGE_ENDPOINT, 
+  COLLECTION_TRANSLATIONS_ENDPOINT, 
+  COLLECTION_TRANSLATION_BY_ID_ENDPOINT, 
+  COLLECTION_PRODUCTS_BATCH_ENDPOINT, 
+  COLLECTION_DELETE_PRODUCTS_BATCH_ENDPOINT, 
+  COLLECTIONS_BY_PRODUCT_ENDPOINT 
+} from './api';
 
 export interface CollectionTranslation {
   description: string;
@@ -92,7 +101,7 @@ const collectionService = {
     }
 
     const queryString = queryParams.toString();
-    const endpoint = queryString ? `/collections?${queryString}` : '/collections';
+    const endpoint = queryString ? `${COLLECTIONS_ENDPOINT}?${queryString}` : COLLECTIONS_ENDPOINT;
 
     const response = await api.get(endpoint);
     return response.data;
@@ -104,7 +113,7 @@ const collectionService = {
    * @returns Promise with collection data
    */
   getCollectionById: async (id: number) => {
-    const response = await api.get(`/collections/${id}`);
+    const response = await api.get(COLLECTION_BY_ID_ENDPOINT(id));
     return response.data;
   },
 
@@ -114,7 +123,7 @@ const collectionService = {
    * @returns Promise with created collection data
    */
   createCollection: async (collectionData: CreateCollectionData) => {
-    const response = await api.post('/collections', collectionData);
+    const response = await api.post(COLLECTIONS_ENDPOINT, collectionData);
     return response.data;
   },
 
@@ -127,7 +136,7 @@ const collectionService = {
     const formData = new FormData();
     formData.append('image', imageFile);
 
-    const response = await api.post('/collections/upload-image', formData, {
+    const response = await api.post(COLLECTION_UPLOAD_IMAGE_ENDPOINT, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -142,7 +151,7 @@ const collectionService = {
    * @returns Promise with added translation data
    */
   addCollectionTranslation: async (collectionId: number, translationData: CollectionTranslationData) => {
-    const response = await api.post(`/collections/${collectionId}/translations`, translationData);
+    const response = await api.post(COLLECTION_TRANSLATIONS_ENDPOINT(collectionId), translationData);
     return response.data;
   },
 
@@ -159,7 +168,7 @@ const collectionService = {
     code?: string;
     type?: "section" | "banner";
   }) => {
-    const response = await api.put(`/collections/${id}`, collectionData);
+    const response = await api.put(COLLECTION_BY_ID_ENDPOINT(id), collectionData);
     return response.data;
   },
 
@@ -174,7 +183,7 @@ const collectionService = {
     description?: string | null;
     lang_code: string;
   }) => {
-    const response = await api.put(`/collections/translations/${id}`, translationData);
+    const response = await api.put(COLLECTION_TRANSLATION_BY_ID_ENDPOINT(id), translationData);
     return response.data;
   },
 
@@ -184,7 +193,7 @@ const collectionService = {
    * @returns Promise with deletion result
    */
   deleteCollection: async (id: number) => {
-    const response = await api.delete(`/collections/${id}`);
+    const response = await api.delete(COLLECTION_BY_ID_ENDPOINT(id));
     return response.data;
   },
 
@@ -195,7 +204,7 @@ const collectionService = {
    * @returns Promise with the result
    */
   addProductsToCollection: async (collectionId: number, productIds: number[]) => {
-    const response = await api.post(`/collections/${collectionId}/products/batch`, {
+    const response = await api.post(COLLECTION_PRODUCTS_BATCH_ENDPOINT(collectionId), {
       product_ids: productIds
     });
     return response.data;
@@ -208,7 +217,7 @@ const collectionService = {
    * @returns Promise with the result
    */
   removeProductsFromCollection: async (collectionId: number, productIds: number[]) => {
-    const response = await api.delete(`/collections/delete/${collectionId}/products/batch`, {
+    const response = await api.delete(COLLECTION_DELETE_PRODUCTS_BATCH_ENDPOINT(collectionId), {
       data: {
         product_ids: productIds
       }
@@ -222,7 +231,7 @@ const collectionService = {
    * @returns Promise with collections data
    */
   getCollectionsByProductId: async (productId: number) => {
-    const response = await api.get(`/collections/product/${productId}`);
+    const response = await api.get(COLLECTIONS_BY_PRODUCT_ENDPOINT(productId));
     return response.data;
   },
 };

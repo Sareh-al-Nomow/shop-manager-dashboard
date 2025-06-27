@@ -1,4 +1,10 @@
-import api from './api';
+import api, { 
+  REVIEWS_ALL_ENDPOINT, 
+  REVIEW_SINGLE_ENDPOINT, 
+  REVIEW_STATUS_ENDPOINT, 
+  REVIEW_RESPONSE_ENDPOINT, 
+  REVIEW_DELETE_ENDPOINT 
+} from './api';
 
 export interface Review {
   review_id: number;
@@ -63,7 +69,7 @@ const reviewService = {
     }
 
     const queryString = queryParams.toString();
-    const endpoint = queryString ? `/reviews/all?${queryString}` : '/reviews/all';
+    const endpoint = queryString ? `${REVIEWS_ALL_ENDPOINT}?${queryString}` : REVIEWS_ALL_ENDPOINT;
 
     const response = await api.get(endpoint);
     return response.data;
@@ -75,7 +81,7 @@ const reviewService = {
    * @returns Promise with review data
    */
   getReviewById: async (id: number) => {
-    const response = await api.get(`/reviews/single/${id}`);
+    const response = await api.get(REVIEW_SINGLE_ENDPOINT(id));
     return response.data;
   },
 
@@ -86,7 +92,7 @@ const reviewService = {
    * @returns Promise with updated review data
    */
   updateReviewStatus: async (id: number, status: string) => {
-    const response = await api.patch(`/reviews/${id}/status`, { status });
+    const response = await api.patch(REVIEW_STATUS_ENDPOINT(id), { status });
     return response.data;
   },
 
@@ -97,7 +103,7 @@ const reviewService = {
    * @returns Promise with updated review data
    */
   addAdminResponse: async (id: number, responseText: string) => {
-    const response = await api.put(`/reviews/${id}/response`, { admin_response: responseText });
+    const response = await api.put(REVIEW_RESPONSE_ENDPOINT(id), { admin_response: responseText });
     return response.data;
   },
 
@@ -107,7 +113,7 @@ const reviewService = {
    * @returns Promise with deletion confirmation
    */
   deleteReview: async (id: number) => {
-    const response = await api.delete(`/reviews/${id}`);
+    const response = await api.delete(REVIEW_DELETE_ENDPOINT(id));
     return response.data;
   },
 };

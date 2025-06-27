@@ -1,4 +1,8 @@
-import api from './api';
+import api, { 
+  CATEGORIES_ENDPOINT, 
+  CATEGORY_BY_ID_ENDPOINT, 
+  CATEGORIES_SHORTS_ENDPOINT 
+} from './api';
 
 export interface Category {
   id: number;
@@ -84,19 +88,14 @@ const categoryService = {
 
     const queryString = queryParams.toString()
 
-    const endpoint = queryString ? `/categories?${queryString}` : '/categories';
+    const endpoint = queryString ? `${CATEGORIES_ENDPOINT}?${queryString}` : CATEGORIES_ENDPOINT;
 
     const response = await api.get(endpoint);
     return response.data;
   },
 
   getCategoriesShorts: async () => {
-
-
-
-    const endpoint =  '/categories/shorts';
-
-    const response = await api.get(endpoint);
+    const response = await api.get(CATEGORIES_SHORTS_ENDPOINT);
     return response.data;
   },
 
@@ -109,7 +108,7 @@ const categoryService = {
     queryParams.append('parentId', 'null');
     queryParams.append('limit', '10');
 
-    const response = await api.get(`/categories?${queryParams.toString()}`);
+    const response = await api.get(`${CATEGORIES_ENDPOINT}?${queryParams.toString()}`);
     return response.data;
   },
 
@@ -119,7 +118,7 @@ const categoryService = {
    * @returns Promise with created category data
    */
   createCategory: async (categoryData: CategoryUpdateData) => {
-    const response = await api.post('/categories', categoryData);
+    const response = await api.post(CATEGORIES_ENDPOINT, categoryData);
     return response.data;
   },
 
@@ -130,7 +129,7 @@ const categoryService = {
    * @returns Promise with updated category data
    */
   updateCategory: async (id: number, categoryData: CategoryUpdateData) => {
-    const response = await api.put(`/categories/${id}`, categoryData);
+    const response = await api.put(CATEGORY_BY_ID_ENDPOINT(id), categoryData);
     return response.data;
   },
 
@@ -140,7 +139,7 @@ const categoryService = {
    * @returns Promise with category data
    */
   getCategoryById: async (id: number) => {
-    const response = await api.get(`/categories/${id}`);
+    const response = await api.get(CATEGORY_BY_ID_ENDPOINT(id));
     console.log(response.data);
     return response.data;
   },
@@ -151,7 +150,7 @@ const categoryService = {
    * @returns Promise with deletion result
    */
   deleteCategory: async (id: number) => {
-    const response = await api.delete(`/categories/${id}`);
+    const response = await api.delete(CATEGORY_BY_ID_ENDPOINT(id));
     return response.data;
   },
 

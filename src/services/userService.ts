@@ -1,4 +1,4 @@
-import api from './api';
+import api, { USER_ENDPOINT, USER_BY_ID_ENDPOINT } from './api';
 
 export interface User {
   id: number;
@@ -153,7 +153,7 @@ const userService = {
     }
 
     const queryString = queryParams.toString();
-    const endpoint = queryString ? `/user?${queryString}` : '/user';
+    const endpoint = queryString ? `${USER_ENDPOINT}?${queryString}` : USER_ENDPOINT;
 
     const response = await api.get(endpoint);
     return response.data;
@@ -165,7 +165,7 @@ const userService = {
    * @returns Promise with user data
    */
   getUserById: async (id: number) => {
-    const response = await api.get(`/user/${id}`);
+    const response = await api.get(USER_BY_ID_ENDPOINT(id));
     return response.data;
   },
 

@@ -1,4 +1,4 @@
-import api from './api';
+import api, { COUNTRIES_ENDPOINT, COUNTRY_BY_ID_ENDPOINT, COUNTRY_CITIES_ENDPOINT } from './api';
 
 // Types
 export interface City {
@@ -47,7 +47,7 @@ const locationService = {
    * @returns Promise with countries data
    */
   getCountries: async (): Promise<Country[]> => {
-    const response = await api.get('/countries');
+    const response = await api.get(COUNTRIES_ENDPOINT);
     return response.data;
   },
 
@@ -57,7 +57,7 @@ const locationService = {
    * @returns Promise with cities data
    */
   getCitiesByCountry: async (countryId: number): Promise<City[]> => {
-    const response = await api.get(`/countries/${countryId}/cities`);
+    const response = await api.get(COUNTRY_CITIES_ENDPOINT(countryId));
     return response.data;
   },
 
@@ -67,7 +67,7 @@ const locationService = {
    * @returns Promise with country data
    */
   getCountry: async (countryId: number): Promise<Country> => {
-    const response = await api.get(`/countries/${countryId}`);
+    const response = await api.get(COUNTRY_BY_ID_ENDPOINT(countryId));
     return response.data;
   }
 };

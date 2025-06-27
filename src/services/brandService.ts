@@ -1,4 +1,4 @@
-import api from './api';
+import api, { BRANDS_ENDPOINT, BRAND_BY_ID_ENDPOINT, BRANDS_SHORTS_ENDPOINT } from './api';
 
 export interface Brand {
   id: number;
@@ -51,17 +51,14 @@ const brandService = {
     }
 
     const queryString = queryParams.toString();
-    const endpoint = queryString ? `/brands?${queryString}` : '/brands';
+    const endpoint = queryString ? `${BRANDS_ENDPOINT}?${queryString}` : BRANDS_ENDPOINT;
 
     const response = await api.get(endpoint);
     return response.data;
   },
 
   getBrandsShorts: async () => {
-
-    const endpoint =  '/brands/shorts';
-
-    const response = await api.get(endpoint);
+    const response = await api.get(BRANDS_SHORTS_ENDPOINT);
     return response.data;
   },
 
@@ -71,7 +68,7 @@ const brandService = {
    * @returns Promise with brand data
    */
   getBrandById: async (id: number) => {
-    const response = await api.get(`/brands/${id}`);
+    const response = await api.get(BRAND_BY_ID_ENDPOINT(id));
     return response.data;
   },
 
@@ -81,7 +78,7 @@ const brandService = {
    * @returns Promise with created brand data
    */
   createBrand: async (brandData: BrandUpdateData) => {
-    const response = await api.post('/brands', brandData);
+    const response = await api.post(BRANDS_ENDPOINT, brandData);
     return response.data;
   },
 
@@ -92,7 +89,7 @@ const brandService = {
    * @returns Promise with updated brand data
    */
   updateBrand: async (id: number, brandData: BrandUpdateData) => {
-    const response = await api.put(`/brands/${id}`, brandData);
+    const response = await api.put(BRAND_BY_ID_ENDPOINT(id), brandData);
     return response.data;
   },
 
@@ -102,7 +99,7 @@ const brandService = {
    * @returns Promise with deletion result
    */
   deleteBrand: async (id: number) => {
-    const response = await api.delete(`/brands/${id}`);
+    const response = await api.delete(BRAND_BY_ID_ENDPOINT(id));
     return response.data;
   },
 };

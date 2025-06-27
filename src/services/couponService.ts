@@ -1,4 +1,4 @@
-import api from './api';
+import api, { COUPONS_ENDPOINT, COUPON_BY_ID_ENDPOINT } from './api';
 
 export interface Coupon {
     coupon_id: number;
@@ -58,7 +58,7 @@ const couponService = {
         }
 
         const queryString = queryParams.toString();
-        const endpoint = queryString ? `/coupons?${queryString}` : '/coupons';
+        const endpoint = queryString ? `${COUPONS_ENDPOINT}?${queryString}` : COUPONS_ENDPOINT;
 
         const response = await api.get(endpoint);
         return response.data;
@@ -70,7 +70,7 @@ const couponService = {
      * @returns Promise with coupon data
      */
     getById: async (id: number) => {
-        const response = await api.get(`/coupons/${id}`);
+        const response = await api.get(COUPON_BY_ID_ENDPOINT(id));
         return response.data;
     },
 
@@ -80,7 +80,7 @@ const couponService = {
      * @returns Promise with created coupon data
      */
     create: async (couponData: Omit<Coupon, 'coupon_id' | 'uuid' | 'used_time' | 'created_at' | 'updated_at'>) => {
-        const response = await api.post('/coupons', couponData);
+        const response = await api.post(COUPONS_ENDPOINT, couponData);
         return response.data;
     },
 
@@ -91,7 +91,7 @@ const couponService = {
      * @returns Promise with updated coupon data
      */
     update: async (id: number, couponData: Partial<Omit<Coupon, 'coupon_id' | 'uuid' | 'created_at' | 'updated_at'>>) => {
-        const response = await api.put(`/coupons/${id}`, couponData);
+        const response = await api.put(COUPON_BY_ID_ENDPOINT(id), couponData);
         return response.data;
     },
 
@@ -101,7 +101,7 @@ const couponService = {
      * @returns Promise with success status
      */
     delete: async (id: number) => {
-        await api.delete(`/coupons/${id}`);
+        await api.delete(COUPON_BY_ID_ENDPOINT(id));
     }
 };
 

@@ -1,4 +1,4 @@
-import api from './api';
+import api, { SETTINGS_ENDPOINT, SETTINGS_STORE_ENDPOINT } from './api';
 
 export interface Setting {
   setting_id: number;
@@ -23,7 +23,7 @@ const settingsService = {
    * @returns Promise with settings data
    */
   getAll: async (): Promise<Setting[]> => {
-    const response = await api.get('/settings');
+    const response = await api.get(SETTINGS_ENDPOINT);
     return response.data;
   },
 
@@ -33,7 +33,7 @@ const settingsService = {
    * @returns Promise with updated settings data
    */
   updateBatch: async (settings: SettingUpdatePayload[]): Promise<any> => {
-    const response = await api.put('/settings/store', { settings });
+    const response = await api.put(SETTINGS_STORE_ENDPOINT, { settings });
     return response.data;
   },
 
@@ -45,7 +45,7 @@ const settingsService = {
   getSettingByName: (settings: Setting[], name: string): any => {
     const setting = settings.find(s => s.name === name);
     if (!setting) return null;
-    
+
     if (setting.is_json) {
       try {
         return typeof setting.value === 'string' 
@@ -56,7 +56,7 @@ const settingsService = {
         return setting.value;
       }
     }
-    
+
     return setting.value;
   }
 };

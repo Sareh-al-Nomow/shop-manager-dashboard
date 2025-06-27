@@ -1,4 +1,9 @@
-import api from './api';
+import api, { 
+  CATEGORY_TRANSLATION_ENDPOINT, 
+  CATEGORY_TRANSLATION_BY_ID_ENDPOINT, 
+  CATEGORY_TRANSLATION_BY_CATEGORY_ENDPOINT, 
+  CATEGORY_TRANSLATION_BY_LANG_ENDPOINT 
+} from './api';
 
 /**
  * Category translation service for handling translation-related API calls
@@ -20,7 +25,7 @@ const categoryTranslationService = {
     meta_description?: string;
     meta_keywords?: string;
   }) => {
-    const response = await api.post('/categoryTranslation', translationData);
+    const response = await api.post(CATEGORY_TRANSLATION_ENDPOINT, translationData);
     return response.data;
   },
 
@@ -39,7 +44,7 @@ const categoryTranslationService = {
     meta_description?: string;
     meta_keywords?: string;
   }) => {
-    const response = await api.put(`/categoryTranslation/${translationId}`, translationData);
+    const response = await api.put(CATEGORY_TRANSLATION_BY_ID_ENDPOINT(translationId), translationData);
     return response.data;
   },
 
@@ -49,7 +54,7 @@ const categoryTranslationService = {
    * @returns Promise with the list of translations
    */
   getTranslationsForCategory: async (categoryId: number) => {
-    const response = await api.get(`/categoryTranslation/category/${categoryId}`);
+    const response = await api.get(CATEGORY_TRANSLATION_BY_CATEGORY_ENDPOINT(categoryId));
     return response.data;
   },
 
@@ -60,7 +65,7 @@ const categoryTranslationService = {
    * @returns Promise with the translation data
    */
   getTranslationByLang: async (categoryId: number, langCode: string) => {
-    const response = await api.get(`/categoryTranslation/category/${categoryId}/lang/${langCode}`);
+    const response = await api.get(CATEGORY_TRANSLATION_BY_LANG_ENDPOINT(categoryId, langCode));
     return response.data;
   },
 };

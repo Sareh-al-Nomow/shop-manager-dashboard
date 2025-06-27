@@ -1,4 +1,10 @@
-import api from './api';
+import api, { 
+  PERMISSIONS_ENDPOINT, 
+  PERMISSIONS_BY_SERVICE_ENDPOINT, 
+  ROLE_PERMISSIONS_ENDPOINT, 
+  ROLE_PERMISSIONS_BATCH_ENDPOINT, 
+  ROLE_PERMISSION_BY_ID_ENDPOINT 
+} from './api';
 
 export interface Permission {
   id: number;
@@ -30,7 +36,7 @@ const permissionService = {
    * @returns Promise with permissions data
    */
   getAllPermissions: async () => {
-    const response = await api.get('/permissions');
+    const response = await api.get(PERMISSIONS_ENDPOINT);
     return response.data;
   },
 
@@ -40,7 +46,7 @@ const permissionService = {
    * @returns Promise with filtered permissions data
    */
   getPermissionsByService: async (service: string) => {
-    const response = await api.get(`/permissions/service/${service}`);
+    const response = await api.get(PERMISSIONS_BY_SERVICE_ENDPOINT(service));
     return response.data;
   },
 
@@ -50,7 +56,7 @@ const permissionService = {
    * @returns Promise with role permissions data
    */
   getRolePermissions: async (roleId: number) => {
-    const response = await api.get(`/role-permissions/role/${roleId}`);
+    const response = await api.get(ROLE_PERMISSIONS_ENDPOINT(roleId));
     return response.data;
   },
 
@@ -61,7 +67,7 @@ const permissionService = {
    * @returns Promise with assignment result
    */
   assignPermissionToRole: async (roleId: number, permissionId: number) => {
-    const response = await api.post(`/role-permissions/role/${roleId}`, {
+    const response = await api.post(ROLE_PERMISSIONS_ENDPOINT(roleId), {
       permission_id: permissionId
     });
     return response.data;
@@ -74,7 +80,7 @@ const permissionService = {
    * @returns Promise with assignment result
    */
   assignMultiplePermissionsToRole: async (roleId: number, permissionIds: number[]) => {
-    const response = await api.post(`/role-permissions/role/${roleId}/batch`, {
+    const response = await api.post(ROLE_PERMISSIONS_BATCH_ENDPOINT(roleId), {
       permission_ids: permissionIds
     });
     return response.data;
@@ -87,7 +93,7 @@ const permissionService = {
    * @returns Promise with removal result
    */
   removePermissionFromRole: async (roleId: number, permissionId: number) => {
-    const response = await api.delete(`/role-permissions/role/${roleId}/permission/${permissionId}`);
+    const response = await api.delete(ROLE_PERMISSION_BY_ID_ENDPOINT(roleId, permissionId));
     return response.data;
   },
 
@@ -97,7 +103,7 @@ const permissionService = {
    * @returns Promise with removal result
    */
   removeAllPermissionsFromRole: async (roleId: number) => {
-    const response = await api.delete(`/role-permissions/role/${roleId}`);
+    const response = await api.delete(ROLE_PERMISSIONS_ENDPOINT(roleId));
     return response.data;
   }
 };

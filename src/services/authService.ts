@@ -1,4 +1,4 @@
-import api from './api';
+import api, { AUTH_LOGIN_ENDPOINT } from './api';
 import permissionService, { Permission, RolePermission } from './permissionService';
 
 export interface LoginCredentials {
@@ -27,7 +27,7 @@ const authService = {
    * @returns Promise with login response data
    */
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
-    const response = await api.post<LoginResponse>('/auth/login', credentials);
+    const response = await api.post<LoginResponse>(AUTH_LOGIN_ENDPOINT, credentials);
     return response.data;
   },
 

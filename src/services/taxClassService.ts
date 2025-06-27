@@ -1,4 +1,4 @@
-import api from './api';
+import api, { TAX_CLASSES_ENDPOINT, TAX_CLASS_BY_ID_ENDPOINT } from './api';
 
 export interface TaxClass {
   tax_class_id: number;
@@ -17,7 +17,7 @@ const taxClassService = {
    * @returns Promise with tax classes data
    */
   getTaxClasses: async () => {
-    const response = await api.get('/tax-classes');
+    const response = await api.get(TAX_CLASSES_ENDPOINT);
     return response.data;
   },
 
@@ -27,7 +27,7 @@ const taxClassService = {
    * @returns Promise with tax class data
    */
   getTaxClassById: async (id: number) => {
-    const response = await api.get(`/tax-classes/${id}`);
+    const response = await api.get(TAX_CLASS_BY_ID_ENDPOINT(id));
     return response.data;
   },
 };

@@ -1,5 +1,11 @@
 
-import api from './api';
+import api, { 
+    ATTRIBUTES_ENDPOINT, 
+    ATTRIBUTE_BY_ID_ENDPOINT, 
+    ATTRIBUTE_GROUPS_ENDPOINT, 
+    ATTRIBUTE_OPTIONS_ENDPOINT, 
+    ATTRIBUTE_GROUP_LINKS_ENDPOINT 
+} from './api';
 
 export interface AttributeOption {
     attribute_option_id: number;
@@ -98,7 +104,7 @@ const attributeService = {
         }
 
         const queryString = queryParams.toString();
-        const endpoint = queryString ? `/attributes?${queryString}` : '/attributes';
+        const endpoint = queryString ? `${ATTRIBUTES_ENDPOINT}?${queryString}` : ATTRIBUTES_ENDPOINT;
 
         const response = await api.get(endpoint);
         return response.data;
@@ -110,7 +116,7 @@ const attributeService = {
      * @returns Promise with attribute data
      */
     getById: async (id: number) => {
-        const response = await api.get(`/attributes/${id}`);
+        const response = await api.get(ATTRIBUTE_BY_ID_ENDPOINT(id));
         return response.data;
     },
 
@@ -120,7 +126,7 @@ const attributeService = {
      * @returns Promise with created attribute data
      */
     create: async (attributeData: CreateAttributeData): Promise<Attribute> => {
-        const response = await api.post<Attribute>('/attributes', attributeData);
+        const response = await api.post<Attribute>(ATTRIBUTES_ENDPOINT, attributeData);
         return response.data;
     },
 
@@ -131,7 +137,7 @@ const attributeService = {
      * @returns Promise with updated attribute data
      */
     update: async (id: number, attributeData: Partial<CreateAttributeData>): Promise<Attribute> => {
-        const response = await api.put<Attribute>(`/attributes/${id}`, attributeData);
+        const response = await api.put<Attribute>(ATTRIBUTE_BY_ID_ENDPOINT(id), attributeData);
         return response.data;
     },
 
@@ -141,7 +147,7 @@ const attributeService = {
      * @returns Promise with success status
      */
     delete: async (id: number): Promise<void> => {
-        await api.delete(`/attributes/${id}`);
+        await api.delete(ATTRIBUTE_BY_ID_ENDPOINT(id));
     },
 
     /**
@@ -149,7 +155,7 @@ const attributeService = {
      * @returns Promise with list of attribute groups
      */
     getGroups: async (): Promise<AttributeGroup[]> => {
-        const response = await api.get<AttributeGroup[]>('/attribute-groups');
+        const response = await api.get<AttributeGroup[]>(ATTRIBUTE_GROUPS_ENDPOINT);
         return response.data;
     },
 
@@ -159,7 +165,7 @@ const attributeService = {
      * @returns Promise with created group data
      */
     createGroup: async (name: string): Promise<AttributeGroup> => {
-        const response = await api.post<AttributeGroup>('/attribute-groups', { group_name: name });
+        const response = await api.post<AttributeGroup>(ATTRIBUTE_GROUPS_ENDPOINT, { group_name: name });
         return response.data;
     },
 
@@ -169,7 +175,7 @@ const attributeService = {
      * @returns Promise with created option data
      */
     createOption: async (optionData: CreateAttributeOptionData): Promise<AttributeOption> => {
-        const response = await api.post<AttributeOption>('/attribute-options', optionData);
+        const response = await api.post<AttributeOption>(ATTRIBUTE_OPTIONS_ENDPOINT, optionData);
         return response.data;
     },
 
@@ -179,7 +185,7 @@ const attributeService = {
      * @returns Promise with success status
      */
     createAttributeGroupLink: async (linkData: AttributeGroupLinkData): Promise<any> => {
-        const response = await api.post('/attribute-group-links', linkData);
+        const response = await api.post(ATTRIBUTE_GROUP_LINKS_ENDPOINT, linkData);
         return response.data;
     },
 };
